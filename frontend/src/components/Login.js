@@ -2,6 +2,7 @@ import React from 'react';
 import { useState } from 'react';
 import bcrypt from 'bcryptjs';
 import { StyledFormWrapper, StyledForm, StyledInput, StyledError, StyledButton }  from './StyledComponents'
+import axios from 'axios';
 
 
 function Login() {
@@ -14,7 +15,6 @@ function Login() {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        console.log(loginUser);
 
         for (let key in loginUser) {
             if (loginUser[key] === '') {
@@ -25,14 +25,17 @@ function Login() {
         setError('');
 
         // Send data to login api backend
-        fetch('http://127.0.0.1:5000/user/login', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(loginUser)
-        }).then(res => {
-            console.log(res);
-            console.log(res.json());
-        });
+        axios.post('http://127.0.0.1:5000/user/login', loginUser).then(res => {
+            console.log(res.data.token);
+            if (res.data.success === 'false') {
+                alert('Username or password is wrong');
+            }
+            else {
+                localStorage.setItem('token', res.data.token);
+                window.location.href = 'http://localhost:3000';
+            }
+        }).catch(err => {
+        })
     };
 
     const handleInput = (e) => {

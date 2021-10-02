@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { useState } from 'react';
 import styled, { createGlobalStyle, css } from 'styled-components';
 import { StyledFormWrapper, StyledForm, StyledInput, StyledError, StyledButton }  from './StyledComponents'
+import axios from 'axios';
 
 function Register() {
     const initialRegisterUser = {
@@ -16,7 +17,7 @@ function Register() {
     const [error, setError] = useState('');
 
     const handleSubmit = (e) => {
-        newUser.date = new Date().toString();
+        newUser.date = Date.now();
         e.preventDefault();
         console.log(newUser);
 
@@ -28,15 +29,18 @@ function Register() {
         }
         setError('');
 
-        // Send data to register api backend
-        fetch('http://127.0.0.1:5000/user/register', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(newUser)
-        }).then(res => {
-            console.log(res);
-            console.log(res.json());
-        });
+        axios.post('http://localhost:5000/user/register', newUser).then(res => {
+            console.log(res.data);
+            if (res.data.success === 'false') {
+                alert('Error creating user');
+            }
+            else {
+                window.location.href = 'http://localhost:3000/login';
+                alert('Successful user creation, please login');
+            }
+        }).catch(err => {
+            console.log(err);
+        })
     }
 
     const handleInput = (e) => {

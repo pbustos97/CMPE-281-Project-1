@@ -34,6 +34,12 @@ const StyledInput = styled.input`
     ${sharedStyles}
 `
 
+const StyledFile = styled.input`
+    display: flex;
+    width: 25%;
+    ${sharedStyles}
+`
+
 const StyledButton = styled.button`
     display: block;
     background-color: brown;
@@ -52,4 +58,4 @@ const StyledError = styled.div`
     margin: 0 0 40px 0;
 `
 
-export { StyledFormWrapper, StyledForm, StyledInput, StyledError, StyledButton }
+export { StyledFormWrapper, StyledForm, StyledInput, StyledError, StyledButton, StyledFile }
