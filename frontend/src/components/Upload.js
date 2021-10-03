@@ -60,16 +60,25 @@ function Upload() {
         formData.append('file_name', uploadState.file_name);
         formData.append('file_description', uploadState.description);
         formData.append('email', uploadState.email);
-        formData.append('upload_date', uploadState.upload_date)
-        formData.append('update_date', uploadState.update_date)
-        formData.append('access_token', localStorage.getItem('token'))
+        formData.append('upload_date', uploadState.upload_date);
+        formData.append('update_date', uploadState.update_date);
+        formData.append('access_token', localStorage.getItem('token'));
 
-        axios.post('http://127.0.0.1:5000/files', formData, {
+        axios.post('http://localhost:5000/files', formData, {
             onUploadProgress: progressEvent => {
                 console.log('Upload Progress: ' + Math.round(progressEvent.loaded / progressEvent.total * 100) + '%');
             }
         }).then(res => {
-            console.log(res);
+            if (res.data.success === "false" && res.data.message === "Expired Token") {
+                alert('Token expired, please login');
+                window.location.href = 'http://localhost:3000/login';
+                return;
+            }
+            if (res.data.success === "false") {
+                alert('Unexpected error');
+                window.location.href = 'http://localhost:3000';
+                return;
+            }
         }).catch((error) => {
             console.log(error);
         });

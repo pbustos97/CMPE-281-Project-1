@@ -1,5 +1,7 @@
+import mysql.connector
 import boto3
 import os
+import jwt
 from botocore.exceptions import ClientError
 from flask import Flask, request, json, jsonify, make_response, session
 from flask_jwt_extended import JWTManager
@@ -17,6 +19,10 @@ Just decode the JWT and return email
 app = Flask(__name__)
 JWTManager(app)
 CORS(app)
+
+db = mysql.connector.connect(host='localhost', user='root',passwd='password', database='cmpe281files')
+
+cur = db.cursor()
 
 # JWT Configurations
 app.config['SECRET_KEY'] = 'changelater'
@@ -121,21 +127,23 @@ def fileGetAll():
 @app.route('/files', methods=['POST'])
 def fileUpload():
     # Handle js FormData token first
-    token = request.form['token']
-    token = jwt.decode(token, app.config['SECRET_KEY'])
-    print(token)
+    token = request.form['access_token']
+    try:
+        token = jwt.decode(token, app.config['SECRET_KEY'],algorithms=['HS256'])
+        print(token)
+    except Exception as e:
+        return jsonify({'message': 'Expired Token', 'success': 'false'})
 
     file = request.files['file']
     fileName = request.form['file_name']
-    fileDescription = request.form['file_description']
+    fileDescription = request.form['file_description'] +'2'
     email = request.form['email']
-    dates = (int(request.form['upload_date']), int(request.form['update_date']))
+    dates = (round(int(request.form['upload_date'])/1000), round(int(request.form['update_date'])/1000))
 
     filePath = email + '/' + fileName
     print(os.path)
     print(filePath)
     file.save(fileName)
-    size = os.path.getsize(fileName)
 
     # Try to check if object is in bucket
     # If not in bucket, continue with function
@@ -146,31 +154,42 @@ def fileUpload():
     
     # Upload to S3 and remove from local system
     try:
-        s3File.put(Body=open(fileName, 'rb'), ACL='public-read')
+        #s3File.put(Body=open(fileName, 'rb'), ACL='public-read')
         os.remove(fileName)
         
-        if getFileInDB():
-            modifyDBEntry(filePath, email, fileDescription, dates, size)
+        print('db access')
+        if getFileInDB(filePath):
+            print('success retrieval')
+            modifyDBEntry(filePath, email, fileDescription, dates)
         else:
-            insertFileToDB(filePath, email, fileDescription, dates, size)
+            print('failed retieval')
+            insertFileToDB(filePath, fileName, email, fileDescription, dates)
     except Exception as e:
         print(e)
 
     return jsonify({'message': 'Successful upload', 'success': 'true'})
 
-# DynamoDB specific functions
-def getFileInDB():
-    return False
+# RDS specific functions. filePath includes the fileName
+def getFileInDB(filePath: str):
+    # Fix return value later
+    cur.execute('SELECT * FROM files WHERE file_path = \'%s\'' % (filePath))
+    for file in cur:
+        print(file)
+    return True
 
-def modifyDBEntry(fileName, email, description, dates, size):
-    modifiedDate = datetime.fromtimestamp(round(dates[1] / 1000))
-    print(modifiedDate)
+def modifyDBEntry(filePath, email, description, dates):
+    modifiedDate = datetime.fromtimestamp(dates[1]).strftime('%c')
+    cur.execute('UPDATE files SET modify_date = \'%s\', description = \'%s\' WHERE file_path = \'%s\'' % (modifiedDate, description, filePath))
+    db.commit()
+    for file in cur:
+        print(file)
     return
 
-def insertFileToDB(fileName, email, description, dates, size):
-    uploadDate = datetime.fromtimestamp(round(dates[0] / 1000))
-    modifiedDate = datetime.fromtimestamp(round(dates[1] / 1000))
-    print(modifiedDate)
+def insertFileToDB(filePath, fileName, email, description, dates):
+    uploadDate = datetime.fromtimestamp(dates[0]).strftime('%c')
+    modifiedDate = datetime.fromtimestamp(dates[1]).strftime('%c')
+    cur.execute('INSERT INTO files VALUES (\'%s\', \'%s\', \'%s\', \'%s\', \'%s\', \'%s\')' % (filePath, fileName, email, description, uploadDate, modifiedDate))
+    db.commit()
     return
 
 # Figure out how to get URL from boto3
