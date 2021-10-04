@@ -1,8 +1,9 @@
 import React from 'react';
 import { useState } from 'react';
 import styled, { createGlobalStyle, css } from 'styled-components';
-import { StyledFormWrapper, StyledForm, StyledFile, StyledButton }  from './StyledComponents';
+import { StyledFormWrapper, StyledForm, StyledFile, StyledButton, StyledInput, StyledTextArea }  from './StyledComponents';
 import axios from 'axios';
+import {getEmail, tokenCheck} from './Auth';
 
 
 function Upload() {
@@ -18,8 +19,42 @@ function Upload() {
     };
     const [uploadState, setUploadState] = useState(initialUploadState);
 
-    const handleSubmit = (e) => {
-        console.log(e);
+    const handleSubmit = async (e) => {
+        const formData = new FormData();
+        if (uploadState.file_size > 10000000) {
+            alert('FILE TOO LARGE! (10 MB max file size)');
+            return;
+        }
+
+        if (uploadState.file === null) {
+            return;
+        }
+
+        // Get email from access token
+        const email = await getEmail()
+        console.log(email.email)
+        // FormData to send all necessary info to the backend
+        formData.append('file', uploadState.file, uploadState.file_name);
+        formData.append('file_name', uploadState.file_name);
+        formData.append('file_description', uploadState.description);
+        formData.append('email', email.email);
+        formData.append('upload_date', uploadState.upload_date);
+        formData.append('update_date', uploadState.update_date);
+        formData.append('access_token', localStorage.getItem('token'));
+
+        axios.post('http://localhost:5000/files', formData, {
+            headers: {
+                'authorization': localStorage.getItem('token')
+            }
+        }).then(res => {
+            if (tokenCheck(res) === false) {
+                window.location.href= 'http://localhost:3000';
+            } else {
+                window.location.reload();
+            }
+        }).catch((error) => {
+            console.log(error);
+        });
     };
 
     const fileSelectedHandler = (e) => {
@@ -27,15 +62,10 @@ function Upload() {
         const date = Date.now();
         console.log(date)
 
-
-        // Need to change description and email to correct values
-        // Need to request data from backend for email and file upload_date if file exists
         const newUploadState = {
             file: e.target.files[0],
             file_name: e.target.files[0].name,
             file_size: e.target.files[0].size,
-            description: 'test',
-            email: 'admin@gmail.com',
             upload_date: date,
             update_date: date
         };
@@ -43,51 +73,22 @@ function Upload() {
         setUploadState(newUploadState);
     }
 
-    // If successful upload, refresh page
-    const fileUploadHandler = (e) => {
-        const formData = new FormData();
-        
-        if (uploadState.file_size > 10000000) {
-            alert('FILE TOO LARGE! (10 MB max file size)');
-            return;
-        }
+    const handleInput = (e) => {
+        const inputName = e.currentTarget.name;
+        const value = e.currentTarget.value;
 
-        // Get email from access token
-        //axios.post('email endpoint')
-        
-        // FormData to send all necessary info to the backend
-        formData.append('file', uploadState.file, uploadState.file_name);
-        formData.append('file_name', uploadState.file_name);
-        formData.append('file_description', uploadState.description);
-        formData.append('email', uploadState.email);
-        formData.append('upload_date', uploadState.upload_date);
-        formData.append('update_date', uploadState.update_date);
-        formData.append('access_token', localStorage.getItem('token'));
-
-        axios.post('http://localhost:5000/files', formData, {
-            onUploadProgress: progressEvent => {
-                console.log('Upload Progress: ' + Math.round(progressEvent.loaded / progressEvent.total * 100) + '%');
-            }
-        }).then(res => {
-            if (res.data.success === "false" && res.data.message === "Expired Token") {
-                alert('Token expired, please login');
-                window.location.href = 'http://localhost:3000/login';
-                return;
-            }
-            if (res.data.success === "false") {
-                alert('Unexpected error');
-                window.location.href = 'http://localhost:3000';
-                return;
-            }
-        }).catch((error) => {
-            console.log(error);
-        });
+        setUploadState(prev => ({...prev, [inputName]: value}));
     }
 
     return (
         <StyledFormWrapper>
-            <StyledFile type='file' onChange={fileSelectedHandler}/>
-            <StyledButton onClick={fileUploadHandler}>Upload</StyledButton>
+                <StyledFile type='file' onChange={fileSelectedHandler} />
+                <StyledInput type='text' 
+                    name="description"
+                    value={uploadState.description}
+                    placeholder="File description"
+                    onChange={handleInput} />
+                <StyledButton onClick={handleSubmit}>Upload</StyledButton>
         </StyledFormWrapper>
     )
 }

@@ -3,6 +3,7 @@ import Register from './components/Register';
 import Login from './components/Login';
 import styled, { createGlobalStyle, css } from 'styled-components';
 import Upload from './components/Upload';
+import Files from './components/Files';
 
 const GlobalStyle = createGlobalStyle`
   html {
@@ -22,7 +23,7 @@ function App() {
       <GlobalStyle />
         <Header />
         <Upload />
-        <Register />
+        <Files />
         <Login />
     </div>
   );

@@ -32,6 +32,8 @@ app.config['JWT_COOKIE_SECURE'] = False
 awsSession = boto3.session.Session(profile_name='rootAdmin')
 app.config['BUCKET_NAME'] = 'cmpe281-p1-files'
 
+## User endpoints
+
 # Should return list of all users, admin only
 @app.route('/users', methods=['GET'])
 def userGetAll():
@@ -46,6 +48,7 @@ def userRegister():
     lname = reqDict['last_name']
     hashedPassword = reqDict['password']
     regDate = round(int(reqDict['date'])/1000)
+    role = 'user'
     userTable = dynamoDbGetTable('users')
     
     # Check if email is in user table
@@ -57,10 +60,11 @@ def userRegister():
         userTable.put_item(
             Item={
                 'email': email,
-                'password': hashedPassword,
+                'passwordHash': hashedPassword,
                 'first_name': fname,
                 'last_name': lname,
                 'date': regDate,
+                'role': role
             }
         )
         response = jsonify({'message': 'successful registration', 'success': 'true'})
@@ -74,35 +78,29 @@ def userLogin():
     reqDict = request.get_json()
     email = reqDict['email']
     hashedPassword = reqDict['password']
-    response = ''
+    response = None
 
     # If password hash is in database return new jwt
     userTable = dynamoDbGetTable('users')
     res = userTable.get_item(Key={'email': email})
     item = res['Item']
 
-    if (email == item['email'] and hashedPassword == item['password']):
-
-
-        # Don't include in token, call /user/<id> endpoint to get name
-        fname = item['first_name']
-        lname = item['last_name']
-
+    token = None
+    if (email == item['email'] and hashedPassword == item['passwordHash']):
 
         token = create_access_token(identity={
-            'email': email, 
-            'first_name': fname, 
-            'last_name': lname,
+            'email': email
             })
         response = jsonify({'message': 'Successful login', 'success': 'true', 'token': token})
     else:
         response = jsonify({'message': 'Unable to verify login', 'success': 'false'})
-
-    return response
+   
+    return make_response(response)
 
 # Should return user data from DynamoDB
-@app.route('/user/<id>', methods=['GET'])
-def userGet(id):
+@app.route('/user', methods=['GET'])
+def userGet():
+    id = request.form['email']
     user = f'user object {id} from db'
     return jsonify(user)
 
@@ -116,33 +114,52 @@ def userUpdate(id):
 def userDelete(id):
     return 200, 'Successful user delete'
 
+## File endpoints
+
 # Returns list of files the user has access to. If admin, different function
 @app.route('/files', methods=['GET'])
 def fileGetAll():
+    if (tokenValid(request.headers['Authorization']) == False):
+        return jsonify({'message': 'Expired or invalid token', 'success': 'false'})
+    token = jwt.decode(request.headers['Authorization'], app.config['SECRET_KEY'],algorithms=['HS256'])
     s3 = awsSession.resource('s3')
-    return jsonify({'files': [{'file': 'yes'}, {'file': 'no'}]})
+    userTable = dynamoDbGetTable('users')
+    res = userTable.get_item(Key={'email': token['sub']['email']})
+    item = res['Item']
+    files = []
+    response = ''
+
+
+    # return all files in the db
+    # else return files with linked email
+    if (item['role'] == 'admin' and request.args.get('email') == None): 
+        cur.execute('SELECT * FROM files')
+        files = cur.fetchall()
+        print(files)
+    else:
+        cur.execute('SELECT * FROM files WHERE email=\'%s\'' % item['email'])
+        files = cur.fetchall()
+        print(files)
+    return jsonify(files)
 
 # Upload files, file replacement is handled by AWS
 # Updates need to change modified date only
 @app.route('/files', methods=['POST'])
 def fileUpload():
-    # Handle js FormData token first
-    token = request.form['access_token']
-    try:
-        token = jwt.decode(token, app.config['SECRET_KEY'],algorithms=['HS256'])
-        print(token)
-    except Exception as e:
-        return jsonify({'message': 'Expired Token', 'success': 'false'})
+    # Handle access token first
+    token = request.headers['authorization']
+    if (tokenValid(token) == False):
+        return jsonify({'message': 'Expired or invalid token', 'success': 'false'})
+    token = jwt.decode(token, app.config['SECRET_KEY'],algorithms=['HS256'])
 
     file = request.files['file']
     fileName = request.form['file_name']
-    fileDescription = request.form['file_description'] +'2'
+    fileDescription = request.form['file_description']
     email = request.form['email']
     dates = (round(int(request.form['upload_date'])/1000), round(int(request.form['update_date'])/1000))
 
+
     filePath = email + '/' + fileName
-    print(os.path)
-    print(filePath)
     file.save(fileName)
 
     # Try to check if object is in bucket
@@ -154,15 +171,15 @@ def fileUpload():
     
     # Upload to S3 and remove from local system
     try:
-        #s3File.put(Body=open(fileName, 'rb'), ACL='public-read')
+        s3File.put(Body=open(fileName, 'rb'), ACL='public-read')
         os.remove(fileName)
         
-        print('db access')
+
         if getFileInDB(filePath):
-            print('success retrieval')
+
             modifyDBEntry(filePath, email, fileDescription, dates)
         else:
-            print('failed retieval')
+
             insertFileToDB(filePath, fileName, email, fileDescription, dates)
     except Exception as e:
         print(e)
@@ -173,16 +190,15 @@ def fileUpload():
 def getFileInDB(filePath: str):
     # Fix return value later
     cur.execute('SELECT * FROM files WHERE file_path = \'%s\'' % (filePath))
-    for file in cur:
-        print(file)
+    files = cur.fetchall()
+    if len(files) == 0:
+        return False
     return True
 
 def modifyDBEntry(filePath, email, description, dates):
     modifiedDate = datetime.fromtimestamp(dates[1]).strftime('%c')
     cur.execute('UPDATE files SET modify_date = \'%s\', description = \'%s\' WHERE file_path = \'%s\'' % (modifiedDate, description, filePath))
     db.commit()
-    for file in cur:
-        print(file)
     return
 
 def insertFileToDB(filePath, fileName, email, description, dates):
@@ -193,31 +209,56 @@ def insertFileToDB(filePath, fileName, email, description, dates):
     return
 
 # Figure out how to get URL from boto3
-@app.route('/file/<id>', methods=['GET'])
-def fileGet(id):
+@app.route('/file', methods=['GET'])
+def fileGet():
     s3File = s3GetObject(id)
     return 200, 'Successful file get'
 
-# Might delete
-@app.route('/file/<id>', methods=['PUT'])
-def fileUpdate(id):
-    s3File = s3GetObject(id)
-    return 200, 'Successful file update'
-
 # Will always return a successful delete because of how boto3 S3.Objects are coded
-@app.route('/file/<id>', methods=['DELETE'])
-def fileDelete(id):
-    s3File = s3GetObject(id)
+@app.route('/file', methods=['POST'])
+def fileDelete():
+    token = request.headers['authorization']
+    if (tokenValid(token) == False):
+        return jsonify({'message': 'Expired or invalid token', 'success': 'false'})
+    token = jwt.decode(token, app.config['SECRET_KEY'],algorithms=['HS256'])
 
-    # Should not produce an error but it's there just in case
+    s3File = s3GetObject(request.form['file'])
+
+    # Check executing user's role
+    userTable = dynamoDbGetTable('users')
+    res = userTable.get_item(Key={'email': token['sub']['email']})
+    item = res['Item']
+    print(item)
+    if (item['role'] != 'admin' or item['email'] != token['sub']['email']):
+        return jsonify({'message': 'Unauthorized delete', 'success': 'false'})
+    
+
+    #Should not produce an exception but it's there just in case
     try:
         s3Del = s3File.delete()
 
         #delete entry from database
+        cur.execute('DELETE FROM files WHERE file_path=\'%s\'' % (request.form['file']))
+        db.commit()
     except Exception as e:
         print(e)
 
     return jsonify({'message': 'Successful delete', 'success': 'true'})
+
+## Admin and API endpoints
+
+# Verifies and returns the user data from the JWT token
+@app.route('/api/email', methods=['GET'])
+def userEmail():
+    if (tokenValid(request.headers['Authorization'])):
+        token = jwt.decode(request.headers['Authorization'], app.config['SECRET_KEY'],algorithms=['HS256'])
+        userTable = dynamoDbGetTable('users')
+    
+        # Check if email is in user table
+        res = userTable.get_item(Key={'email': token['sub']['email']})
+        if ('Item' in res):
+            return jsonify({'message': 'Successful email', 'success': 'true', 'email': token['sub']['email'], 'first_name': res['Item']['first_name'], 'last_name': res['Item']['last_name']})
+    return jsonify({'message': 'Failed email', 'success': 'false'})
 
 # Common AWS commands
 def s3GetObject(object:str):
@@ -229,19 +270,13 @@ def dynamoDbGetTable(table:str):
     return dynamoDb.Table(table)
 
 
-# Might need later    
-def tokenCheck(func):
-    @wraps(func)
-    def wrapped(*args, **kwargs):
-        token = request.args.get('token')
-        if not token:
-            return jsonify({'message': 'Token missing', 'success': 'false'}), 403
-        try:
-            data = jwt.decode(token, app.config['SECRET_KEY'])
-        except:
-            return jsonify({'message': 'Invalid Token', 'success': 'false'}), 403
-        return func(*args, **kwargs)
-
+# Checks if token is valid or expired
+def tokenValid(token):
+    try:
+        token = jwt.decode(token, app.config['SECRET_KEY'],algorithms=['HS256'])
+    except Exception as e:
+        return False
+    return True
 
 if __name__ == '__main__':
     app.run(debug=True, host="0.0.0.0", port=5000)

@@ -25,8 +25,9 @@ function Login() {
         setError('');
 
         // Send data to login api backend
-        axios.post('http://127.0.0.1:5000/user/login', loginUser).then(res => {
-            console.log(res.data.token);
+        axios.post('http://localhost:5000/user/login', loginUser).then(res => {
+            console.log(res);
+            console.log(res.headers);
             if (res.data.success === 'false') {
                 alert('Username or password is wrong');
             }
