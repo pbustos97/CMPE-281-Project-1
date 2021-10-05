@@ -21,7 +21,6 @@ function Files() {
             alert('Unauthenticated, please log in');
             window.location.href = 'http://localhost:3000/login';
         }
-
         const user = await getEmail();
         setFname(user.first_name);
         setLname(user.last_name);
@@ -33,6 +32,7 @@ function Files() {
         }).then((res) => res.json()).then(data => {
             return data;
         })
+        console.log(data)
         setFiles(data);
     }
 

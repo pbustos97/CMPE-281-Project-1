@@ -135,11 +135,11 @@ def fileGetAll():
     if (item['role'] == 'admin' and request.args.get('email') == None): 
         cur.execute('SELECT * FROM files')
         files = cur.fetchall()
-        print(files)
+        #print(files)
     else:
         cur.execute('SELECT * FROM files WHERE email=\'%s\'' % item['email'])
         files = cur.fetchall()
-        print(files)
+        #print(files)
     return jsonify(files)
 
 # Upload files, file replacement is handled by AWS
@@ -173,14 +173,14 @@ def fileUpload():
     try:
         s3File.put(Body=open(fileName, 'rb'), ACL='public-read')
         os.remove(fileName)
-        
+        s3 = boto3.client('s3')
+        url = '{}/{}/{}'.format(s3.meta.endpoint_url, app.config['BUCKET_NAME'], filePath)
+        print(url)
 
         if getFileInDB(filePath):
-
             modifyDBEntry(filePath, email, fileDescription, dates)
         else:
-
-            insertFileToDB(filePath, fileName, email, fileDescription, dates)
+            insertFileToDB(filePath, fileName, email, fileDescription, dates, url)
     except Exception as e:
         print(e)
 
@@ -197,14 +197,22 @@ def getFileInDB(filePath: str):
 
 def modifyDBEntry(filePath, email, description, dates):
     modifiedDate = datetime.fromtimestamp(dates[1]).strftime('%c')
-    cur.execute('UPDATE files SET modify_date = \'%s\', description = \'%s\' WHERE file_path = \'%s\'' % (modifiedDate, description, filePath))
+    try:
+        cur.execute('UPDATE files SET modify_date = \'%s\', description = \'%s\' WHERE file_path = \'%s\'' % (modifiedDate, description, filePath))
+    except Exception as e:
+        print(e)
+        return
     db.commit()
     return
 
-def insertFileToDB(filePath, fileName, email, description, dates):
+def insertFileToDB(filePath, fileName, email, description, dates, url):
     uploadDate = datetime.fromtimestamp(dates[0]).strftime('%c')
     modifiedDate = datetime.fromtimestamp(dates[1]).strftime('%c')
-    cur.execute('INSERT INTO files VALUES (\'%s\', \'%s\', \'%s\', \'%s\', \'%s\', \'%s\')' % (filePath, fileName, email, description, uploadDate, modifiedDate))
+    try:
+        cur.execute('INSERT INTO files VALUES (\'%s\', \'%s\', \'%s\', \'%s\', \'%s\', \'%s\', \'%s\')' % (filePath, fileName, email, description, uploadDate, modifiedDate, url))
+    except Exception as e:
+        print(e)
+        return
     db.commit()
     return
 

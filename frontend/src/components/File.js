@@ -7,7 +7,7 @@ import { tokenCheck } from './Auth';
 // Displays all options user can do with file
 function File({file, first_name, last_name}) {
     const fileDownloadHandler = (e) => {
-        console.log(e);
+        window.open(file[6])
     }
     
     const fileDeleteHandler = async (e) => {
@@ -45,9 +45,6 @@ function File({file, first_name, last_name}) {
                 </StyledFileGridColumn>
                 <StyledFileGridColumn>
                     {file[5]}
-                </StyledFileGridColumn>
-                <StyledFileGridColumn>
-                    {file[6]}
                 </StyledFileGridColumn>
                 <StyledFileGridColumn>{first_name} {last_name}</StyledFileGridColumn>
             </StyledFileGrid>
