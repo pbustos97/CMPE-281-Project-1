@@ -2,7 +2,7 @@ import axios from 'axios';
 import React from 'react';
 import { useState, useEffect } from 'react';
 import File from './File';
-import { tokenCheck, hasToken, getEmail } from './Auth';
+import { tokenCheck, hasToken, getEmail, getAdmin } from './Auth';
 import { StyledFileEntry, StyledFileGrid, StyledFileGridColumn } from './StyledComponents';
 
 // Component for a list of files
@@ -22,18 +22,36 @@ function Files() {
             window.location.href = 'http://localhost:3000/login';
         }
         const user = await getEmail();
+        const isAdmin = getAdmin();
+        //console.log(user);
         setFname(user.first_name);
         setLname(user.last_name);
-        const data = await fetch('http://localhost:5000/files', {
-            method: 'GET',
-            headers: {
-                'authorization': localStorage.getItem('token')
-            }
-        }).then((res) => res.json()).then(data => {
-            return data;
-        })
-        console.log(data)
-        setFiles(data);
+
+        if (window.location.pathname === '/user'){
+            const data = await axios.get('http://localhost:5000/files', {
+                params: {
+                    'email': user.email
+                },
+                headers: {
+                    'authorization': localStorage.getItem('token')
+                }
+            }).then(res => {
+                console.log(res.data)
+                tokenCheck(res) 
+                return res.data;
+            })
+            setFiles(data);
+        } else if (window.location.pathname === '/files' && isAdmin){
+            const data = await axios.get('http://localhost:5000/files', {
+                headers: {
+                    'authorization': localStorage.getItem('token')
+                }
+            }).then(res => {
+                tokenCheck(res) 
+                return res.data;
+            })
+            setFiles(data);
+        }
     }
 
     return (

@@ -46,6 +46,12 @@ const StyledFileGrid = styled.div`
     grid-template-columns: auto auto auto auto auto auto auto auto;
 `
 
+const StyledButtonGrid = styled.div`
+    display: grid;
+    grid-template-rows: auto auto auto auto;
+    margin-left: auto;
+`
+
 const StyledFileGridColumn = styled.div``
 
 const StyledInput = styled.input`
@@ -94,4 +100,4 @@ const StyledTextArea = styled.input`
     display: flex;
 `
 
-export { StyledFormWrapper, StyledForm, StyledInput, StyledError, StyledButton, StyledFile, StyledButtonDelete, StyledTextArea, StyledFileEntry, StyledFileGrid, StyledFileGridColumn }
+export { StyledFormWrapper, StyledForm, StyledInput, StyledError, StyledButton, StyledFile, StyledButtonDelete, StyledTextArea, StyledFileEntry, StyledFileGrid, StyledFileGridColumn, StyledButtonGrid }

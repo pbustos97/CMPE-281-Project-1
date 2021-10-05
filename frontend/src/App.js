@@ -4,6 +4,10 @@ import Login from './components/Login';
 import styled, { createGlobalStyle, css } from 'styled-components';
 import Upload from './components/Upload';
 import Files from './components/Files';
+import {Route, Link} from 'react-router-dom';
+import LoginPage from './pages/LoginPage';
+import UserPage from './pages/UserPage';
+import AdminPage from './pages/AdminPage';
 
 const GlobalStyle = createGlobalStyle`
   html {
@@ -22,9 +26,9 @@ function App() {
     <div className="App">
       <GlobalStyle />
         <Header />
-        <Upload />
-        <Files />
-        <Login />
+        <Route exact path='/login' component={LoginPage}/>
+        <Route exact path='/user' component={UserPage}/>
+        <Route exact path='/files' component={AdminPage}/>
     </div>
   );
 }

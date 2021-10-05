@@ -38,4 +38,19 @@ const getEmail = () => {
     return data;
 }
 
-export { tokenCheck, hasToken, getEmail };
+const getAdmin = async () => {
+    const data = fetch('http://localhost:5000/api/email', {
+        method: 'GET',
+        headers: { 'authorization': localStorage.getItem('token') }
+    }).then((res) => res.json()).then(data => {
+        return data;
+    }).then(data => {
+        if (data.role === "admin"){
+            return true
+        }
+        return false;
+    })
+    return data;
+}
+
+export { tokenCheck, hasToken, getEmail, getAdmin };

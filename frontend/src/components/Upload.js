@@ -5,7 +5,6 @@ import { StyledFormWrapper, StyledForm, StyledFile, StyledButton, StyledInput, S
 import axios from 'axios';
 import {getEmail, tokenCheck} from './Auth';
 
-
 function Upload() {
     const initialUploadState = {
         file: null,
@@ -20,6 +19,7 @@ function Upload() {
     const [uploadState, setUploadState] = useState(initialUploadState);
 
     const handleSubmit = async (e) => {
+        console.log('submitting')
         const formData = new FormData();
         if (uploadState.file_size > 10000000) {
             alert('FILE TOO LARGE! (10 MB max file size)');
@@ -50,7 +50,7 @@ function Upload() {
             if (tokenCheck(res) === false) {
                 window.location.href= 'http://localhost:3000';
             } else {
-                window.location.reload();
+                //window.location.reload();
             }
         }).catch((error) => {
             console.log(error);
@@ -82,6 +82,7 @@ function Upload() {
 
     return (
         <StyledFormWrapper>
+                Upload to update or add file (If you want the description to be the same on update, input the description into the text field)
                 <StyledFile type='file' onChange={fileSelectedHandler} />
                 <StyledInput type='text' 
                     name="description"

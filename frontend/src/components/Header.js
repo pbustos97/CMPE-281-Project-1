@@ -1,9 +1,15 @@
 import React from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styled, { createGlobalStyle, css } from 'styled-components';
 import { StyledFormWrapper, StyledForm, StyledInput, StyledError, StyledButton }  from './StyledComponents';
 import axios from 'axios';
 import Login from './Login';
+import {BrowserRouter} from 'react-router-dom';
+import { Route, Link } from 'react-router-dom';
+import LoginPage from '../pages/LoginPage';
+import { getAdmin } from './Auth';
+
+
 
 // Header specific stylizations
 const Nav = styled.div`
@@ -41,7 +47,18 @@ const NavRight = styled.div`
 const MenuLink = styled.a``
 
 function Header() {
-    
+    const [isAdmin, setIsAdmin] = useState(false);
+
+    useEffect(() => {
+        fetchData();
+    }, [])
+
+    const fetchData = async () => {
+        var check = await getAdmin()
+        if (check) {
+            setIsAdmin(true);
+        }
+    }
 
     return (
         <Nav>
@@ -55,10 +72,13 @@ function Header() {
                     Hello, world
                 </NavCenter>
                 <NavRight>
-                    <MenuLink href="user">
-                        Profile
-                    </MenuLink>
+                    <Link exact to="/login">Login</Link>
                 </NavRight>
+                {localStorage.getItem('token') &&
+                <NavRight>
+                    <Link exact to="/user">Profile</Link>
+                </NavRight>}
+                {isAdmin && <Link exact to="/files">Admin</Link>}
             </NavHeader>
         </Nav>
     )

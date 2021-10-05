@@ -31,6 +31,7 @@ app.config['JWT_COOKIE_SECURE'] = False
 # AWS Configurations
 awsSession = boto3.session.Session(profile_name='rootAdmin')
 app.config['BUCKET_NAME'] = 'cmpe281-p1-files'
+app.config['CF_DOMAIN'] = 'domain'
 
 ## User endpoints
 
@@ -129,14 +130,15 @@ def fileGetAll():
     files = []
     response = ''
 
-
     # return all files in the db
     # else return files with linked email
     if (item['role'] == 'admin' and request.args.get('email') == None): 
+        print('getting admin files')
         cur.execute('SELECT * FROM files')
         files = cur.fetchall()
         #print(files)
     else:
+        print('getting user files')
         cur.execute('SELECT * FROM files WHERE email=\'%s\'' % item['email'])
         files = cur.fetchall()
         #print(files)
@@ -174,7 +176,7 @@ def fileUpload():
         s3File.put(Body=open(fileName, 'rb'), ACL='public-read')
         os.remove(fileName)
         s3 = boto3.client('s3')
-        url = '{}/{}/{}'.format(s3.meta.endpoint_url, app.config['BUCKET_NAME'], filePath)
+        url = '{}/{}'.format(app.config['CF_DOMAIN'], filePath)
         print(url)
 
         if getFileInDB(filePath):
@@ -188,7 +190,7 @@ def fileUpload():
 
 # RDS specific functions. filePath includes the fileName
 def getFileInDB(filePath: str):
-    # Fix return value later
+    print('Getting file {filePath}')
     cur.execute('SELECT * FROM files WHERE file_path = \'%s\'' % (filePath))
     files = cur.fetchall()
     if len(files) == 0:
@@ -196,6 +198,7 @@ def getFileInDB(filePath: str):
     return True
 
 def modifyDBEntry(filePath, email, description, dates):
+    print('Modifying file {filePath}')
     modifiedDate = datetime.fromtimestamp(dates[1]).strftime('%c')
     try:
         cur.execute('UPDATE files SET modify_date = \'%s\', description = \'%s\' WHERE file_path = \'%s\'' % (modifiedDate, description, filePath))
@@ -206,6 +209,7 @@ def modifyDBEntry(filePath, email, description, dates):
     return
 
 def insertFileToDB(filePath, fileName, email, description, dates, url):
+    print('Inserting file {filePath}')
     uploadDate = datetime.fromtimestamp(dates[0]).strftime('%c')
     modifiedDate = datetime.fromtimestamp(dates[1]).strftime('%c')
     try:
@@ -265,7 +269,7 @@ def userEmail():
         # Check if email is in user table
         res = userTable.get_item(Key={'email': token['sub']['email']})
         if ('Item' in res):
-            return jsonify({'message': 'Successful email', 'success': 'true', 'email': token['sub']['email'], 'first_name': res['Item']['first_name'], 'last_name': res['Item']['last_name']})
+            return jsonify({'message': 'Successful email', 'success': 'true', 'email': token['sub']['email'], 'first_name': res['Item']['first_name'], 'last_name': res['Item']['last_name'], 'role': res['Item']['role']})
     return jsonify({'message': 'Failed email', 'success': 'false'})
 
 # Common AWS commands

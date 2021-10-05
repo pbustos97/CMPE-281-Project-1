@@ -1,13 +1,15 @@
 import axios from 'axios';
 import React from 'react';
-import { StyledButton, StyledButtonDelete, StyledFileEntry, StyledFileGrid, StyledFileGridColumn } from './StyledComponents';
+import { useState } from 'react';
+import { StyledButton, StyledButtonDelete, StyledFileEntry, StyledFileGrid, StyledFileGridColumn, StyledInput } from './StyledComponents';
 import { tokenCheck } from './Auth';
 
 // File component for Files.js list
 // Displays all options user can do with file
 function File({file, first_name, last_name}) {
+    const [description, setDescription] = useState('');
     const fileDownloadHandler = (e) => {
-        window.open(file[6])
+        window.open(file[6]);
     }
     
     const fileDeleteHandler = async (e) => {
@@ -48,8 +50,14 @@ function File({file, first_name, last_name}) {
                 </StyledFileGridColumn>
                 <StyledFileGridColumn>{first_name} {last_name}</StyledFileGridColumn>
             </StyledFileGrid>
-                <StyledButton onClick={fileDownloadHandler}>Download</StyledButton>
+            <StyledFileGrid>
+                <div>
                 <StyledButtonDelete onClick={fileDeleteHandler}>Delete</StyledButtonDelete>
+                </div>
+                <div>
+                <StyledButton onClick={fileDownloadHandler}>Download</StyledButton>
+                </div>
+            </StyledFileGrid>
         </StyledFileEntry>
     )
 }
