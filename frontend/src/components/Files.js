@@ -19,7 +19,7 @@ function Files() {
     const fetchData = async () => {
         if (hasToken() === false) {
             alert('Unauthenticated, please log in');
-            window.location.href = 'http://localhost:3000/login';
+            window.location.pathname = '/login';
         }
         const user = await getEmail();
         const isAdmin = getAdmin();

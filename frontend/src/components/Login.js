@@ -33,7 +33,7 @@ function Login() {
             }
             else {
                 localStorage.setItem('token', res.data.token);
-                window.location.href = 'http://localhost:3000';
+                window.location.href = window.location.origin;
             }
         }).catch(err => {
         })

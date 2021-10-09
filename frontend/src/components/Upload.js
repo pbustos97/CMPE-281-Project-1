@@ -48,7 +48,7 @@ function Upload() {
             }
         }).then(res => {
             if (tokenCheck(res) === false) {
-                window.location.href= 'http://localhost:3000';
+                window.location.href = window.location.origin;
             } else {
                 //window.location.reload();
             }

@@ -10,12 +10,6 @@ from flask_cors import CORS, cross_origin
 from functools import wraps
 from datetime import datetime, timedelta
 
-"""
-Create endpoint to send email back to client if requested.
-Just decode the JWT and return email
-"""
-
-
 app = Flask(__name__)
 JWTManager(app)
 CORS(app)

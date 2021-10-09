@@ -12,17 +12,17 @@ const tokenCheck = (res) => {
     console.log(res.data);
     if (res.data.success === "false" && res.data.message === "Expired Token") {
         alert('Token expired, please login');
-        window.location.href = 'http://localhost:3000/login';
+        window.location.pathname = '/login';
         return false;
     }
     if (res.data.success === "false" && res.data.message === "Expired or invalid token") {
         alert('Authentication error');
-        window.location.href = 'http://localhost:3000';
+        window.location.href = window.location.origin;
         return false;
     }
     if (res.data.success === "false") {
         alert('Unexpected error');
-        window.location.href = 'http://localhost:3000';
+        window.location.href = window.location.origin;
         return false;
     }
 }
