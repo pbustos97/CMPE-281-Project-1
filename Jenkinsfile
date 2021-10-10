@@ -1,7 +1,12 @@
+def gv
+
 pipeline {
 
     // Where to execute the pipeline script
     agent any
+    tools {
+        node = 'Node-16.11'
+    }
     parameters {
         choice(name: 'VERSION', choices: ['1.1.0', '1.2.0', '1.3.0'], description: '')
         booleanParam(name: 'executeTests', defaultValue: true, description: 'should jenkins execute tests')
@@ -11,12 +16,32 @@ pipeline {
     }
     // Different pipeline stages
     stages {
-
-        stage("build") {
+        stage("init") {
+            steps {
+                script {
+                    gv = load "script.groovy"
+                }
+            }
+        }
+        stage("build frontend") {
             // Script executes command on Jenkins agent
             steps {
-                echo 'building application...'
-                echo "version ${NEW_VERSION}"
+                script {
+                    gv.buildApp()
+                }
+                dir('frontend') {
+                    nodejs('Node-16.11') {
+                        sh 'npm i'
+                        sh 'npm build'
+                    }
+                }
+            }
+        }
+        stage("build backend") {
+            steps {
+                script {
+                    gv.buildApp()
+                }
             }
         }
 
@@ -27,8 +52,7 @@ pipeline {
                 }
             }
             steps {
-                echo 'testing application...'
-                echo "version ${params.VERSION}"
+                gv.testApp()
             }
         }
     }
