@@ -16,7 +16,9 @@ pipeline {
         stage("init") {
             steps {
                 script {
+                    echo "Initializing groovy scripts..."
                     gv = load "script.groovy"
+                    echo "Finished initializing groovy scripts"
                 }
             }
         }
@@ -28,7 +30,7 @@ pipeline {
                 }
                 dir('frontend') {
                     nodejs('Node-16.11') {
-                        sh 'npm i'
+                        sh 'npm install'
                         sh 'npm build'
                     }
                 }
