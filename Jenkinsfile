@@ -38,18 +38,6 @@ pipeline {
             }
         }
     }
-    post {
-        always {
-
-        }
-        success {
-
-        }
-
-        failure {
-
-        }
-    }
 }
 
 // equivalent to lines 1-3
