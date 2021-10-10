@@ -29,11 +29,6 @@ pipeline {
             steps {
                 echo 'testing application...'
                 echo "version ${params.VERSION}"
-                withCredentials([
-                    usernamePassword(credentialsId: 'server-credentials', usernameVariable: 'USER', passwordVariable: 'PWD')
-                ]) {
-                    sh "echo ${USER} ${PWD}"
-                }
             }
         }
     }
