@@ -31,7 +31,7 @@ pipeline {
                 dir('frontend') {
                     nodejs('Node-16.11') {
                         sh 'npm install'
-                        sh 'npm build'
+                        sh 'npm run build'
                     }
                 }
             }
