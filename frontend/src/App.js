@@ -1,10 +1,6 @@
 import Header from './components/Header';
-import Register from './components/Register';
-import Login from './components/Login';
-import styled, { createGlobalStyle, css } from 'styled-components';
-import Upload from './components/Upload';
-import Files from './components/Files';
-import {Route, Link} from 'react-router-dom';
+import { createGlobalStyle } from 'styled-components';
+import {Route} from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import UserPage from './pages/UserPage';
 import AdminPage from './pages/AdminPage';

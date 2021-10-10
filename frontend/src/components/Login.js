@@ -1,6 +1,5 @@
 import React from 'react';
 import { useState } from 'react';
-import bcrypt from 'bcryptjs';
 import { StyledFormWrapper, StyledForm, StyledInput, StyledError, StyledButton }  from './StyledComponents'
 import axios from 'axios';
 

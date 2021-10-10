@@ -1,7 +1,7 @@
 import axios from 'axios';
 import React from 'react';
 import { useState } from 'react';
-import { StyledButton, StyledButtonDelete, StyledFileEntry, StyledFileGrid, StyledFileGridColumn, StyledInput } from './StyledComponents';
+import { StyledButton, StyledButtonDelete, StyledFileEntry, StyledFileGrid, StyledFileGridColumn } from './StyledComponents';
 import { tokenCheck } from './Auth';
 
 // File component for Files.js list
@@ -10,6 +10,14 @@ function File({file, first_name, last_name}) {
     const [description, setDescription] = useState('');
     const fileDownloadHandler = (e) => {
         window.open(file[6]);
+    }
+
+    const handleInput = (e) => {
+        console.log(e);
+    }
+
+    const fileEditHandler = async (e) => {
+        console.log(e);
     }
     
     const fileDeleteHandler = async (e) => {

@@ -1,7 +1,6 @@
 import React from 'react';
 import { useState } from 'react';
-import styled, { createGlobalStyle, css } from 'styled-components';
-import { StyledFormWrapper, StyledForm, StyledFile, StyledButton, StyledInput, StyledTextArea }  from './StyledComponents';
+import { StyledFormWrapper, StyledFile, StyledButton, StyledInput}  from './StyledComponents';
 import axios from 'axios';
 import {getEmail, tokenCheck} from './Auth';
 

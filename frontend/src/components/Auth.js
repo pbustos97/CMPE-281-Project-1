@@ -1,6 +1,3 @@
-import React from 'react'
-import { useState } from 'react'
-
 const hasToken = () => {
     if (localStorage.getItem('token') === null) {
        return false;

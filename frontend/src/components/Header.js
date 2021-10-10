@@ -1,12 +1,7 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
 import styled, { createGlobalStyle, css } from 'styled-components';
-import { StyledFormWrapper, StyledForm, StyledInput, StyledError, StyledButton }  from './StyledComponents';
-import axios from 'axios';
-import Login from './Login';
-import {BrowserRouter} from 'react-router-dom';
-import { Route, Link } from 'react-router-dom';
-import LoginPage from '../pages/LoginPage';
+import { Link } from 'react-router-dom';
 import { getAdmin } from './Auth';
 
 
