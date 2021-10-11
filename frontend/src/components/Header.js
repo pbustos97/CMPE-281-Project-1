@@ -52,6 +52,7 @@ function Header() {
     const fetchData = async () => {
         var check = await getAdmin();
         var validToken = await checkToken(localStorage.getItem('token'));
+        // console.log(validToken);
         if (validToken === false) {
             return;
         } else {

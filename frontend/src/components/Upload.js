@@ -2,7 +2,7 @@ import React from 'react';
 import { useState } from 'react';
 import { StyledFormWrapper, StyledFile, StyledButton, StyledInput}  from './StyledComponents';
 import axios from 'axios';
-import {getEmail, tokenCheck, checkToken} from './Auth';
+import {getEmail, checkToken} from './Auth';
 
 function Upload() {
     const initialUploadState = {
@@ -19,7 +19,7 @@ function Upload() {
 
     const handleSubmit = async (e) => {
         console.log('submitting')
-        if (checkToken(localStorage.getItem('token') === false )) {
+        if (checkToken(localStorage.getItem('token')) === false ) {
             alert('Unauthenticated, please log in');
             window.location.pathname = '/login';
             return;

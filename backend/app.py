@@ -14,7 +14,7 @@ app = Flask(__name__)
 JWTManager(app)
 CORS(app)
 
-db = mysql.connector.connect(host='localhost', user='root',passwd='Derplol1', database='cmpe281files')
+db = mysql.connector.connect(host='localhost', user='root',passwd='password', database='cmpe281files')
 
 cur = db.cursor()
 
@@ -25,7 +25,7 @@ app.config['JWT_COOKIE_SECURE'] = False
 # AWS Configurations
 awsSession = boto3.session.Session(profile_name='rootAdmin')
 app.config['BUCKET_NAME'] = 'cmpe281-p1-files'
-app.config['CF_DOMAIN'] = 'https://d1bed1swav3tfi.cloudfront.net'
+app.config['CF_DOMAIN'] = 'domain'
 
 ## User endpoints
 
@@ -185,6 +185,42 @@ def fileUpload():
 
     return jsonify({'message': 'Successful upload', 'status': 'success'})
 
+@app.route('/files', methods=['PUT'])
+def fileUpdate():
+    token = request.headers['authorization']
+    if (tokenValid(token) == False):
+        return jsonify({'message': 'Expired or invalid token', 'status': 'failed'})
+    token = jwt.decode(token, app.config['SECRET_KEY'],algorithms=['HS256'])
+
+
+    description = request.form['description']
+    dates = [0,0]
+    dates[1] = round(int(request.form['modify_date'])/1000)
+    email = token['sub']['email']
+    file = email + '/' + request.form['file']
+
+    s3File = s3GetObject(file)
+    
+    # Update file metadata in database
+    try:
+        s3File.load()
+
+        if getFileInDB(file):
+            modifyDBEntry(file, email, description, dates)
+        else:
+            return jsonify({'message': 'Unable to upload file', 'status': 'failed'})
+    except Exception as e:
+        print(e)
+        try:
+            cur.execute('DELETE FROM files WHERE file_path=\'%s\'' % (request.form['file']))
+            db.commit()
+        except Exception as e:
+            print(e)
+            return jsonify({'message': 'Error deleting metadata from database', 'status': 'failed'})
+        return jsonify({'message': 'File does not exist', 'status': 'failed'})
+        
+    return jsonify({'message': 'Successful update', 'status': 'success'})
+
 # RDS specific functions. filePath includes the fileName
 def getFileInDB(filePath: str):
     print('Getting file {filePath}')
@@ -272,9 +308,9 @@ def userEmail():
 @app.route('/api/checkToken', methods=['GET'])
 def checkToken():
     if (tokenValid(request.headers['Authorization'])):
-        return jsonify({'message': 'Token is valid', 'status': 'success'})
+        return jsonify({'message': 'Token is valid', 'status': 'true'})
     else:
-        return jsonify({'message': 'Token invalid', 'status': 'failed'})
+        return jsonify({'message': 'Token invalid', 'status': 'false'})
 
 # Common AWS commands
 def s3GetObject(object:str):
@@ -290,7 +326,9 @@ def tokenValid(token):
     try:
         token = jwt.decode(token, app.config['SECRET_KEY'],algorithms=['HS256'])
     except Exception as e:
+        print('error validating token')
         return False
+    print('token validated')
     return True
 
 if __name__ == '__main__':

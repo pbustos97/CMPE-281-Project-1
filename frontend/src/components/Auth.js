@@ -1,34 +1,38 @@
 import axios from "axios";
 
-const hasToken = () => {
-    if (localStorage.getItem('token') === null) {
-       return false;
-    }
-    return true;
-}
+// Depreciated localstorage checker
+// const hasToken = () => {
+//     if (localStorage.getItem('token') === null) {
+//        return false;
+//     }
+//     return true;
+// }
 
-const tokenCheck = (res) => {
-    console.log(res.data);
-    if (res.data.success === "false" && res.data.message === "Expired Token") {
-        alert('Token expired, please login');
-        window.location.pathname = '/login';
-        return false;
-    }
-    if (res.data.success === "false" && res.data.message === "Expired or invalid token") {
-        alert('Authentication error');
-        window.location.href = window.location.origin;
-        return false;
-    }
-    if (res.data.success === "false") {
-        alert('Unexpected error');
-        window.location.href = window.location.origin;
-        return false;
-    }
-    return true;
-}
+// Depreciated token checker
+// const tokenCheck = (res) => {
+//     console.log(res.data);
+//     if (res.data.status === "false" && res.data.message === "Expired Token") {
+//         alert('Token expired, please login');
+//         window.location.pathname = '/login';
+//         return false;
+//     }
+//     if (res.data.status === "false" && res.data.message === "Expired or invalid token") {
+//         alert('Authentication error');
+//         window.location.href = window.location.origin;
+//         return false;
+//     }
+//     if (res.data.status === "false") {
+//         alert('Unexpected error');
+//         window.location.href = window.location.origin;
+//         return false;
+//     }
+//     return true;
+// }
 
 const checkToken = async (token) => {
+    // console.log(token);
     if (token === null) {
+        console.log('no token');
         return false;
     } else {
         const validToken = await axios.get('http://localhost:5000/api/checkToken', {
@@ -36,11 +40,13 @@ const checkToken = async (token) => {
                 'Authorization': localStorage.getItem('token')
             }
         }).then(res => {
-            return res.data.success;
+            // console.log(res.data.status)
+            return res.data.status;
         }).catch(res => {
-            console.log(res);
+            // console.log(res);
             return false;
         })
+        // console.log(validToken)
         if (validToken === "true") {
             return true;
         } else {
@@ -79,4 +85,4 @@ const getAdmin = async () => {
     return data;
 }
 
-export { tokenCheck, hasToken, getEmail, getAdmin, checkToken };
+export { getEmail, getAdmin, checkToken };

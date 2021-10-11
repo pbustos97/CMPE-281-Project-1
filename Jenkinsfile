@@ -37,13 +37,6 @@ pipeline {
                 }
             }
         }
-        stage("build backend") {
-            steps {
-                script {
-                    gv.buildApp()
-                }
-            }
-        }
 
         stage("test frontend") {
             when {

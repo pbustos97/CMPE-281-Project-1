@@ -2,7 +2,7 @@ import axios from 'axios';
 import React from 'react';
 import { useState, useEffect } from 'react';
 import File from './File';
-import { hasToken, getEmail, getAdmin, checkToken } from './Auth';
+import { getEmail, getAdmin, checkToken } from './Auth';
 import { StyledFileEntry, StyledFileGrid, StyledFileGridColumn } from './StyledComponents';
 
 // Component for a list of files
@@ -17,11 +17,7 @@ function Files() {
     }, [])
     
     const fetchData = async () => {
-        if (hasToken() === false) {
-            alert('Unauthenticated, please log in');
-            window.location.pathname = '/login';
-        }
-        if (checkToken(localStorage.getItem('token') === false )) {
+        if (checkToken(localStorage.getItem('token')) === false ) {
             alert('Unauthenticated, please log in');
             window.location.pathname = '/login';
             return;
