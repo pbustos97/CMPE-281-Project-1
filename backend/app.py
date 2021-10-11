@@ -50,7 +50,7 @@ def userRegister():
     response = userTable.get_item(Key={'email': email})
 
     if ('Item' in response):
-        return jsonify({'message': 'failed registration', 'success': 'false'})
+        return jsonify({'message': 'failed registration', 'status': 'failed'})
     else:
         userTable.put_item(
             Item={
@@ -62,7 +62,7 @@ def userRegister():
                 'role': role
             }
         )
-        response = jsonify({'message': 'successful registration', 'success': 'true'})
+        response = jsonify({'message': 'successful registration', 'status': 'success'})
     
     # Should redirect to login page instead
     return response
@@ -86,9 +86,9 @@ def userLogin():
         token = create_access_token(identity={
             'email': email
             })
-        response = jsonify({'message': 'Successful login', 'success': 'true', 'token': token})
+        response = jsonify({'message': 'Successful login', 'status': 'success', 'token': token})
     else:
-        response = jsonify({'message': 'Unable to verify login', 'success': 'false'})
+        response = jsonify({'message': 'Unable to verify login', 'status': 'failed'})
    
     return make_response(response)
 
@@ -115,7 +115,7 @@ def userDelete(id):
 @app.route('/files', methods=['GET'])
 def fileGetAll():
     if (tokenValid(request.headers['Authorization']) == False):
-        return jsonify({'message': 'Expired or invalid token', 'success': 'false'})
+        return jsonify({'message': 'Expired or invalid token', 'status': 'failed'})
     token = jwt.decode(request.headers['Authorization'], app.config['SECRET_KEY'],algorithms=['HS256'])
     s3 = awsSession.resource('s3')
     userTable = dynamoDbGetTable('users')
@@ -131,11 +131,14 @@ def fileGetAll():
         cur.execute('SELECT * FROM files')
         files = cur.fetchall()
         #print(files)
-    else:
+    elif (request.args.get('email') == item['email']):
         print('getting user files')
         cur.execute('SELECT * FROM files WHERE email=\'%s\'' % item['email'])
         files = cur.fetchall()
         #print(files)
+    else:
+        print('wrong user')
+        return jsonify({'message': 'Invalid access', 'status': 'failed'})
     return jsonify(files)
 
 # Upload files, file replacement is handled by AWS
@@ -145,7 +148,7 @@ def fileUpload():
     # Handle access token first
     token = request.headers['authorization']
     if (tokenValid(token) == False):
-        return jsonify({'message': 'Expired or invalid token', 'success': 'false'})
+        return jsonify({'message': 'Expired or invalid token', 'status': 'failed'})
     token = jwt.decode(token, app.config['SECRET_KEY'],algorithms=['HS256'])
 
     file = request.files['file']
@@ -180,7 +183,43 @@ def fileUpload():
     except Exception as e:
         print(e)
 
-    return jsonify({'message': 'Successful upload', 'success': 'true'})
+    return jsonify({'message': 'Successful upload', 'status': 'success'})
+
+@app.route('/files', methods=['PUT'])
+def fileUpdate():
+    token = request.headers['authorization']
+    if (tokenValid(token) == False):
+        return jsonify({'message': 'Expired or invalid token', 'status': 'failed'})
+    token = jwt.decode(token, app.config['SECRET_KEY'],algorithms=['HS256'])
+
+
+    description = request.form['description']
+    dates = [0,0]
+    dates[1] = round(int(request.form['modify_date'])/1000)
+    email = token['sub']['email']
+    file = email + '/' + request.form['file']
+
+    s3File = s3GetObject(file)
+    
+    # Update file metadata in database
+    try:
+        s3File.load()
+
+        if getFileInDB(file):
+            modifyDBEntry(file, email, description, dates)
+        else:
+            return jsonify({'message': 'Unable to upload file', 'status': 'failed'})
+    except Exception as e:
+        print(e)
+        try:
+            cur.execute('DELETE FROM files WHERE file_path=\'%s\'' % (request.form['file']))
+            db.commit()
+        except Exception as e:
+            print(e)
+            return jsonify({'message': 'Error deleting metadata from database', 'status': 'failed'})
+        return jsonify({'message': 'File does not exist', 'status': 'failed'})
+        
+    return jsonify({'message': 'Successful update', 'status': 'success'})
 
 # RDS specific functions. filePath includes the fileName
 def getFileInDB(filePath: str):
@@ -225,7 +264,7 @@ def fileGet():
 def fileDelete():
     token = request.headers['authorization']
     if (tokenValid(token) == False):
-        return jsonify({'message': 'Expired or invalid token', 'success': 'false'})
+        return jsonify({'message': 'Expired or invalid token', 'status': 'failed'})
     token = jwt.decode(token, app.config['SECRET_KEY'],algorithms=['HS256'])
 
     s3File = s3GetObject(request.form['file'])
@@ -236,7 +275,7 @@ def fileDelete():
     item = res['Item']
     print(item)
     if (item['role'] != 'admin' or item['email'] != token['sub']['email']):
-        return jsonify({'message': 'Unauthorized delete', 'success': 'false'})
+        return jsonify({'message': 'Unauthorized delete', 'status': 'failed'})
     
 
     #Should not produce an exception but it's there just in case
@@ -249,7 +288,7 @@ def fileDelete():
     except Exception as e:
         print(e)
 
-    return jsonify({'message': 'Successful delete', 'success': 'true'})
+    return jsonify({'message': 'Successful delete', 'status': 'success'})
 
 ## Admin and API endpoints
 
@@ -263,8 +302,15 @@ def userEmail():
         # Check if email is in user table
         res = userTable.get_item(Key={'email': token['sub']['email']})
         if ('Item' in res):
-            return jsonify({'message': 'Successful email', 'success': 'true', 'email': token['sub']['email'], 'first_name': res['Item']['first_name'], 'last_name': res['Item']['last_name'], 'role': res['Item']['role']})
-    return jsonify({'message': 'Failed email', 'success': 'false'})
+            return jsonify({'message': 'Successful email', 'status': 'success', 'email': token['sub']['email'], 'first_name': res['Item']['first_name'], 'last_name': res['Item']['last_name'], 'role': res['Item']['role']})
+    return jsonify({'message': 'Failed email', 'status': 'failed'})
+
+@app.route('/api/checkToken', methods=['GET'])
+def checkToken():
+    if (tokenValid(request.headers['Authorization'])):
+        return jsonify({'message': 'Token is valid', 'status': 'true'})
+    else:
+        return jsonify({'message': 'Token invalid', 'status': 'false'})
 
 # Common AWS commands
 def s3GetObject(object:str):
@@ -275,13 +321,14 @@ def dynamoDbGetTable(table:str):
     dynamoDb = awsSession.resource('dynamodb', region_name='us-west-2', endpoint_url='http://localhost:8000')
     return dynamoDb.Table(table)
 
-
 # Checks if token is valid or expired
 def tokenValid(token):
     try:
         token = jwt.decode(token, app.config['SECRET_KEY'],algorithms=['HS256'])
     except Exception as e:
+        print('error validating token')
         return False
+    print('token validated')
     return True
 
 if __name__ == '__main__':

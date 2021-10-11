@@ -1,9 +1,8 @@
 import React from 'react';
 import { useState } from 'react';
-import styled, { createGlobalStyle, css } from 'styled-components';
-import { StyledFormWrapper, StyledForm, StyledFile, StyledButton, StyledInput, StyledTextArea }  from './StyledComponents';
+import { StyledFormWrapper, StyledFile, StyledButton, StyledInput}  from './StyledComponents';
 import axios from 'axios';
-import {getEmail, tokenCheck} from './Auth';
+import {getEmail, checkToken} from './Auth';
 
 function Upload() {
     const initialUploadState = {
@@ -20,6 +19,12 @@ function Upload() {
 
     const handleSubmit = async (e) => {
         console.log('submitting')
+        if (checkToken(localStorage.getItem('token')) === false ) {
+            alert('Unauthenticated, please log in');
+            window.location.pathname = '/login';
+            return;
+        }
+
         const formData = new FormData();
         if (uploadState.file_size > 10000000) {
             alert('FILE TOO LARGE! (10 MB max file size)');
@@ -47,11 +52,7 @@ function Upload() {
                 'authorization': localStorage.getItem('token')
             }
         }).then(res => {
-            if (tokenCheck(res) === false) {
-                window.location.href = window.location.origin;
-            } else {
-                //window.location.reload();
-            }
+                window.location.reload();
         }).catch((error) => {
             console.log(error);
         });

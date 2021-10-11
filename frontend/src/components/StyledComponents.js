@@ -1,4 +1,4 @@
-import styled, { createGlobalStyle, css } from 'styled-components';
+import styled, { css } from 'styled-components';
 
 const sharedStyles = css`
   background-color: #eee;

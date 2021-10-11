@@ -1,6 +1,5 @@
 import React from 'react';
 import { useState } from 'react';
-import bcrypt from 'bcryptjs';
 import { StyledFormWrapper, StyledForm, StyledInput, StyledError, StyledButton }  from './StyledComponents'
 import axios from 'axios';
 
@@ -28,7 +27,7 @@ function Login() {
         axios.post('http://localhost:5000/user/login', loginUser).then(res => {
             console.log(res);
             console.log(res.headers);
-            if (res.data.success === 'false') {
+            if (res.data.status === 'false') {
                 alert('Username or password is wrong');
             }
             else {

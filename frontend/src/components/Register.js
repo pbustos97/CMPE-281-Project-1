@@ -1,7 +1,5 @@
 import React from 'react';
-import bcrypt from 'bcryptjs';
 import { useState } from 'react';
-import styled, { createGlobalStyle, css } from 'styled-components';
 import { StyledFormWrapper, StyledForm, StyledInput, StyledError, StyledButton }  from './StyledComponents'
 import axios from 'axios';
 
@@ -31,7 +29,7 @@ function Register() {
 
         axios.post('http://localhost:5000/user/register', newUser).then(res => {
             console.log(res.data);
-            if (res.data.success === 'false') {
+            if (res.data.status === 'false') {
                 alert('Error creating user');
             }
             else {

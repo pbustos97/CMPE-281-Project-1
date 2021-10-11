@@ -1,29 +1,57 @@
-import React from 'react'
-import { useState } from 'react'
+import axios from "axios";
 
-const hasToken = () => {
-    if (localStorage.getItem('token') === null) {
-       return false;
-    }
-    return true;
-}
+// Depreciated localstorage checker
+// const hasToken = () => {
+//     if (localStorage.getItem('token') === null) {
+//        return false;
+//     }
+//     return true;
+// }
 
-const tokenCheck = (res) => {
-    console.log(res.data);
-    if (res.data.success === "false" && res.data.message === "Expired Token") {
-        alert('Token expired, please login');
-        window.location.pathname = '/login';
+// Depreciated token checker
+// const tokenCheck = (res) => {
+//     console.log(res.data);
+//     if (res.data.status === "false" && res.data.message === "Expired Token") {
+//         alert('Token expired, please login');
+//         window.location.pathname = '/login';
+//         return false;
+//     }
+//     if (res.data.status === "false" && res.data.message === "Expired or invalid token") {
+//         alert('Authentication error');
+//         window.location.href = window.location.origin;
+//         return false;
+//     }
+//     if (res.data.status === "false") {
+//         alert('Unexpected error');
+//         window.location.href = window.location.origin;
+//         return false;
+//     }
+//     return true;
+// }
+
+const checkToken = async (token) => {
+    // console.log(token);
+    if (token === null) {
+        console.log('no token');
         return false;
-    }
-    if (res.data.success === "false" && res.data.message === "Expired or invalid token") {
-        alert('Authentication error');
-        window.location.href = window.location.origin;
-        return false;
-    }
-    if (res.data.success === "false") {
-        alert('Unexpected error');
-        window.location.href = window.location.origin;
-        return false;
+    } else {
+        const validToken = await axios.get('http://localhost:5000/api/checkToken', {
+            headers: {
+                'Authorization': localStorage.getItem('token')
+            }
+        }).then(res => {
+            // console.log(res.data.status)
+            return res.data.status;
+        }).catch(res => {
+            // console.log(res);
+            return false;
+        })
+        // console.log(validToken)
+        if (validToken === "true") {
+            return true;
+        } else {
+            return false;
+        }
     }
 }
 
@@ -34,6 +62,8 @@ const getEmail = () => {
         headers: { 'authorization': localStorage.getItem('token') }
     }).then((res) => res.json()).then(data => {
         return data;
+    }).catch(() => {
+        return JSON.stringify({'status': 503, 'message': 'Service unavailable'});
     })
     return data;
 }
@@ -46,11 +76,13 @@ const getAdmin = async () => {
         return data;
     }).then(data => {
         if (data.role === "admin"){
-            return true
+            return true;
         }
         return false;
+    }).catch(() => {
+        return JSON.stringify({'status': 503, 'message': 'Service unavailable'});
     })
     return data;
 }
 
-export { tokenCheck, hasToken, getEmail, getAdmin };
+export { getEmail, getAdmin, checkToken };
