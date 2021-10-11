@@ -30,12 +30,12 @@ app.config['CF_DOMAIN'] = 'domain'
 ## User endpoints
 
 # Should return list of all users, admin only
-@app.route('/users', methods=['GET'])
+@app.route('/api/users', methods=['GET'])
 def userGetAll():
     return jsonify({'users': []})
 
 # Registration endpoint
-@app.route('/user/register', methods=['POST'])
+@app.route('/api/user/register', methods=['POST'])
 def userRegister():
     reqDict = request.get_json()
     email = reqDict['email']
@@ -68,7 +68,7 @@ def userRegister():
     return response
 
 # Login endpoint
-@app.route('/user/login', methods=['POST'])
+@app.route('/api/user/login', methods=['POST'])
 def userLogin():
     reqDict = request.get_json()
     email = reqDict['email']
@@ -93,14 +93,14 @@ def userLogin():
     return make_response(response)
 
 # Should return user data from DynamoDB
-@app.route('/user', methods=['GET'])
+@app.route('/api/user', methods=['GET'])
 def userGet():
     id = request.form['email']
     user = f'user object {id} from db'
     return jsonify(user)
 
 # Modify user profile data
-@app.route('/user/<id>', methods=['PUT'])
+@app.route('/api/user/<id>', methods=['PUT'])
 def userUpdate(id):
     return 200, 'Successful user edit'
 
@@ -112,7 +112,7 @@ def userDelete(id):
 ## File endpoints
 
 # Returns list of files the user has access to. If admin, different function
-@app.route('/files', methods=['GET'])
+@app.route('/api/files', methods=['GET'])
 def fileGetAll():
     if (tokenValid(request.headers['Authorization']) == False):
         return jsonify({'message': 'Expired or invalid token', 'status': 'failed'})
@@ -143,7 +143,7 @@ def fileGetAll():
 
 # Upload files, file replacement is handled by AWS
 # Updates need to change modified date only
-@app.route('/files', methods=['POST'])
+@app.route('/api/files', methods=['POST'])
 def fileUpload():
     # Handle access token first
     token = request.headers['authorization']
@@ -185,7 +185,7 @@ def fileUpload():
 
     return jsonify({'message': 'Successful upload', 'status': 'success'})
 
-@app.route('/files', methods=['PUT'])
+@app.route('/api/files', methods=['PUT'])
 def fileUpdate():
     token = request.headers['authorization']
     if (tokenValid(token) == False):
@@ -254,13 +254,13 @@ def insertFileToDB(filePath, fileName, email, description, dates, url):
     return
 
 # Figure out how to get URL from boto3
-@app.route('/file', methods=['GET'])
+@app.route('/api/file', methods=['GET'])
 def fileGet():
     s3File = s3GetObject(id)
     return 200, 'Successful file get'
 
 # Will always return a successful delete because of how boto3 S3.Objects are coded
-@app.route('/file', methods=['POST'])
+@app.route('/api/file', methods=['POST'])
 def fileDelete():
     token = request.headers['authorization']
     if (tokenValid(token) == False):

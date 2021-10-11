@@ -24,7 +24,7 @@ function Login() {
         setError('');
 
         // Send data to login api backend
-        axios.post('http://localhost:5000/user/login', loginUser).then(res => {
+        axios.post('http://localhost:5000/api/user/login', loginUser).then(res => {
             console.log(res);
             console.log(res.headers);
             if (res.data.status === 'false') {

@@ -47,7 +47,7 @@ function Upload() {
         formData.append('update_date', uploadState.update_date);
         formData.append('access_token', localStorage.getItem('token'));
 
-        axios.post('http://localhost:5000/files', formData, {
+        axios.post('http://localhost:5000/api/files', formData, {
             headers: {
                 'authorization': localStorage.getItem('token')
             }
