@@ -1,3 +1,4 @@
+@Library('github.com/releaseworks/jenkinslib') _
 def gv
 
 pipeline {
@@ -64,6 +65,29 @@ pipeline {
                 dir('frontend') {
                     nodejs('Node-16.11') {
                         sh 'npm run test'
+                    }
+                }
+            }
+        }
+
+        stage("deploy frontend") {
+            when {
+                expression {
+                    (env.BRANCH_NAME == 'main')
+                }
+            }
+            steps {
+                script {
+                    gv.deployApp()
+                }
+                dir('frontend') {
+                    withCredentials([[
+                        $class: 'AmazonWebServicesCredentialsBinding',
+                        credentialsId: "aws-admin2",
+                        accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                        secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                    ]]) {
+                        AWS("s3 sync build/ s3://files.patrickdbustos.link")
                     }
                 }
             }
