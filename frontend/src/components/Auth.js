@@ -1,3 +1,5 @@
+import axios from "axios";
+
 const hasToken = () => {
     if (localStorage.getItem('token') === null) {
        return false;
@@ -22,6 +24,29 @@ const tokenCheck = (res) => {
         window.location.href = window.location.origin;
         return false;
     }
+    return true;
+}
+
+const checkToken = async (token) => {
+    if (token === null) {
+        return false;
+    } else {
+        const validToken = await axios.get('http://localhost:5000/api/checkToken', {
+            headers: {
+                'Authorization': localStorage.getItem('token')
+            }
+        }).then(res => {
+            return res.data.success;
+        }).catch(res => {
+            console.log(res);
+            return false;
+        })
+        if (validToken === "true") {
+            return true;
+        } else {
+            return false;
+        }
+    }
 }
 
 const getEmail = () => {
@@ -31,6 +56,8 @@ const getEmail = () => {
         headers: { 'authorization': localStorage.getItem('token') }
     }).then((res) => res.json()).then(data => {
         return data;
+    }).catch(() => {
+        return JSON.stringify({'status': 503, 'message': 'Service unavailable'});
     })
     return data;
 }
@@ -43,11 +70,13 @@ const getAdmin = async () => {
         return data;
     }).then(data => {
         if (data.role === "admin"){
-            return true
+            return true;
         }
         return false;
+    }).catch(() => {
+        return JSON.stringify({'status': 503, 'message': 'Service unavailable'});
     })
     return data;
 }
 
-export { tokenCheck, hasToken, getEmail, getAdmin };
+export { tokenCheck, hasToken, getEmail, getAdmin, checkToken };

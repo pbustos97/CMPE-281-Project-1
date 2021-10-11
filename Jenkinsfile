@@ -22,6 +22,7 @@ pipeline {
                 }
             }
         }
+
         stage("build frontend") {
             // Script executes command on Jenkins agent
             steps {
@@ -44,7 +45,7 @@ pipeline {
             }
         }
 
-        stage("test") {
+        stage("test frontend") {
             when {
                 expression {
                     (env.BRANCH_NAME == 'dev' || env.BRANCH_NAME == 'main')  && params.executeTests == true
@@ -53,6 +54,24 @@ pipeline {
             steps {
                 script {
                     gv.testApp()
+                }
+            }
+        }
+
+        stage("test backend") {
+            when {
+                expression {
+                    (env.BRANCH_NAME == 'dev' || env.BRANCH_NAME == 'main')  && params.executeTests == true
+                }
+            }
+            steps {
+                script {
+                    gv.testApp()
+                }
+                dir('frontend') {
+                    nodejs('Node-16.11') {
+                        sh 'npm run test'
+                    }
                 }
             }
         }

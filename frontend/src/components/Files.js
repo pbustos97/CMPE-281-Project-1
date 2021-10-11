@@ -2,7 +2,7 @@ import axios from 'axios';
 import React from 'react';
 import { useState, useEffect } from 'react';
 import File from './File';
-import { tokenCheck, hasToken, getEmail, getAdmin } from './Auth';
+import { hasToken, getEmail, getAdmin, checkToken } from './Auth';
 import { StyledFileEntry, StyledFileGrid, StyledFileGridColumn } from './StyledComponents';
 
 // Component for a list of files
@@ -21,8 +21,17 @@ function Files() {
             alert('Unauthenticated, please log in');
             window.location.pathname = '/login';
         }
+        if (checkToken(localStorage.getItem('token') === false )) {
+            alert('Unauthenticated, please log in');
+            window.location.pathname = '/login';
+            return;
+        }
         const user = await getEmail();
-        const isAdmin = getAdmin();
+        const isAdmin = await getAdmin();
+        if (typeof isAdmin !== "boolean") {
+            alert('Error getting user data');
+            window.location.href = window.location.origin;
+        }
         //console.log(user);
         setFname(user.first_name);
         setLname(user.last_name);
@@ -36,9 +45,10 @@ function Files() {
                     'authorization': localStorage.getItem('token')
                 }
             }).then(res => {
-                console.log(res.data)
-                tokenCheck(res) 
+                console.log(res.data);
                 return res.data;
+            }).catch(err => {
+                console.log(err);
             })
             setFiles(data);
         } else if (window.location.pathname === '/files' && isAdmin){
@@ -47,7 +57,6 @@ function Files() {
                     'authorization': localStorage.getItem('token')
                 }
             }).then(res => {
-                tokenCheck(res) 
                 return res.data;
             })
             setFiles(data);

@@ -2,7 +2,7 @@ import axios from 'axios';
 import React from 'react';
 import { useState } from 'react';
 import { StyledButton, StyledButtonDelete, StyledFileEntry, StyledFileGrid, StyledFileGridColumn } from './StyledComponents';
-import { tokenCheck } from './Auth';
+import { checkToken } from './Auth';
 
 // File component for Files.js list
 // Displays all options user can do with file
@@ -21,6 +21,11 @@ function File({file, first_name, last_name}) {
     }
     
     const fileDeleteHandler = async (e) => {
+        if (checkToken(localStorage.getItem('token') === false )) {
+            alert('Unauthenticated, please log in');
+            window.location.pathname = '/login';
+            return;
+        }
         const formData = new FormData();
         formData.append('file', file[0]);
 
@@ -31,11 +36,6 @@ function File({file, first_name, last_name}) {
         }
         ).then(res => {
             console.log(res);
-            if (tokenCheck(res) === false) {
-                window.location.href = window.location.origin;
-            } else {
-                window.location.reload();
-            }
         }).catch((error) => {
             console.log(error);
         });

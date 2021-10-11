@@ -14,7 +14,7 @@ app = Flask(__name__)
 JWTManager(app)
 CORS(app)
 
-db = mysql.connector.connect(host='localhost', user='root',passwd='password', database='cmpe281files')
+db = mysql.connector.connect(host='localhost', user='root',passwd='Derplol1', database='cmpe281files')
 
 cur = db.cursor()
 
@@ -25,7 +25,7 @@ app.config['JWT_COOKIE_SECURE'] = False
 # AWS Configurations
 awsSession = boto3.session.Session(profile_name='rootAdmin')
 app.config['BUCKET_NAME'] = 'cmpe281-p1-files'
-app.config['CF_DOMAIN'] = 'domain'
+app.config['CF_DOMAIN'] = 'https://d1bed1swav3tfi.cloudfront.net'
 
 ## User endpoints
 
@@ -50,7 +50,7 @@ def userRegister():
     response = userTable.get_item(Key={'email': email})
 
     if ('Item' in response):
-        return jsonify({'message': 'failed registration', 'success': 'false'})
+        return jsonify({'message': 'failed registration', 'status': 'failed'})
     else:
         userTable.put_item(
             Item={
@@ -62,7 +62,7 @@ def userRegister():
                 'role': role
             }
         )
-        response = jsonify({'message': 'successful registration', 'success': 'true'})
+        response = jsonify({'message': 'successful registration', 'status': 'success'})
     
     # Should redirect to login page instead
     return response
@@ -86,9 +86,9 @@ def userLogin():
         token = create_access_token(identity={
             'email': email
             })
-        response = jsonify({'message': 'Successful login', 'success': 'true', 'token': token})
+        response = jsonify({'message': 'Successful login', 'status': 'success', 'token': token})
     else:
-        response = jsonify({'message': 'Unable to verify login', 'success': 'false'})
+        response = jsonify({'message': 'Unable to verify login', 'status': 'failed'})
    
     return make_response(response)
 
@@ -115,7 +115,7 @@ def userDelete(id):
 @app.route('/files', methods=['GET'])
 def fileGetAll():
     if (tokenValid(request.headers['Authorization']) == False):
-        return jsonify({'message': 'Expired or invalid token', 'success': 'false'})
+        return jsonify({'message': 'Expired or invalid token', 'status': 'failed'})
     token = jwt.decode(request.headers['Authorization'], app.config['SECRET_KEY'],algorithms=['HS256'])
     s3 = awsSession.resource('s3')
     userTable = dynamoDbGetTable('users')
@@ -131,11 +131,14 @@ def fileGetAll():
         cur.execute('SELECT * FROM files')
         files = cur.fetchall()
         #print(files)
-    else:
+    elif (request.args.get('email') == item['email']):
         print('getting user files')
         cur.execute('SELECT * FROM files WHERE email=\'%s\'' % item['email'])
         files = cur.fetchall()
         #print(files)
+    else:
+        print('wrong user')
+        return jsonify({'message': 'Invalid access', 'status': 'failed'})
     return jsonify(files)
 
 # Upload files, file replacement is handled by AWS
@@ -145,7 +148,7 @@ def fileUpload():
     # Handle access token first
     token = request.headers['authorization']
     if (tokenValid(token) == False):
-        return jsonify({'message': 'Expired or invalid token', 'success': 'false'})
+        return jsonify({'message': 'Expired or invalid token', 'status': 'failed'})
     token = jwt.decode(token, app.config['SECRET_KEY'],algorithms=['HS256'])
 
     file = request.files['file']
@@ -180,7 +183,7 @@ def fileUpload():
     except Exception as e:
         print(e)
 
-    return jsonify({'message': 'Successful upload', 'success': 'true'})
+    return jsonify({'message': 'Successful upload', 'status': 'success'})
 
 # RDS specific functions. filePath includes the fileName
 def getFileInDB(filePath: str):
@@ -225,7 +228,7 @@ def fileGet():
 def fileDelete():
     token = request.headers['authorization']
     if (tokenValid(token) == False):
-        return jsonify({'message': 'Expired or invalid token', 'success': 'false'})
+        return jsonify({'message': 'Expired or invalid token', 'status': 'failed'})
     token = jwt.decode(token, app.config['SECRET_KEY'],algorithms=['HS256'])
 
     s3File = s3GetObject(request.form['file'])
@@ -236,7 +239,7 @@ def fileDelete():
     item = res['Item']
     print(item)
     if (item['role'] != 'admin' or item['email'] != token['sub']['email']):
-        return jsonify({'message': 'Unauthorized delete', 'success': 'false'})
+        return jsonify({'message': 'Unauthorized delete', 'status': 'failed'})
     
 
     #Should not produce an exception but it's there just in case
@@ -249,7 +252,7 @@ def fileDelete():
     except Exception as e:
         print(e)
 
-    return jsonify({'message': 'Successful delete', 'success': 'true'})
+    return jsonify({'message': 'Successful delete', 'status': 'success'})
 
 ## Admin and API endpoints
 
@@ -263,8 +266,15 @@ def userEmail():
         # Check if email is in user table
         res = userTable.get_item(Key={'email': token['sub']['email']})
         if ('Item' in res):
-            return jsonify({'message': 'Successful email', 'success': 'true', 'email': token['sub']['email'], 'first_name': res['Item']['first_name'], 'last_name': res['Item']['last_name'], 'role': res['Item']['role']})
-    return jsonify({'message': 'Failed email', 'success': 'false'})
+            return jsonify({'message': 'Successful email', 'status': 'success', 'email': token['sub']['email'], 'first_name': res['Item']['first_name'], 'last_name': res['Item']['last_name'], 'role': res['Item']['role']})
+    return jsonify({'message': 'Failed email', 'status': 'failed'})
+
+@app.route('/api/checkToken', methods=['GET'])
+def checkToken():
+    if (tokenValid(request.headers['Authorization'])):
+        return jsonify({'message': 'Token is valid', 'status': 'success'})
+    else:
+        return jsonify({'message': 'Token invalid', 'status': 'failed'})
 
 # Common AWS commands
 def s3GetObject(object:str):
@@ -274,7 +284,6 @@ def s3GetObject(object:str):
 def dynamoDbGetTable(table:str):
     dynamoDb = awsSession.resource('dynamodb', region_name='us-west-2', endpoint_url='http://localhost:8000')
     return dynamoDb.Table(table)
-
 
 # Checks if token is valid or expired
 def tokenValid(token):

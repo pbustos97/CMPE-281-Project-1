@@ -1,8 +1,8 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
-import styled, { createGlobalStyle, css } from 'styled-components';
+import styled from 'styled-components';
 import { Link } from 'react-router-dom';
-import { getAdmin } from './Auth';
+import { getAdmin, checkToken } from './Auth';
 
 
 
@@ -43,14 +43,21 @@ const MenuLink = styled.a``
 
 function Header() {
     const [isAdmin, setIsAdmin] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(false)
 
     useEffect(() => {
         fetchData();
     }, [])
 
     const fetchData = async () => {
-        var check = await getAdmin()
-        if (check) {
+        var check = await getAdmin();
+        var validToken = await checkToken(localStorage.getItem('token'));
+        if (validToken === false) {
+            return;
+        } else {
+            setIsLoggedIn(true);
+        }
+        if (check === true) {
             setIsAdmin(true);
         }
     }
@@ -69,7 +76,7 @@ function Header() {
                 <NavRight>
                     <Link exact to="/login">Login</Link>
                 </NavRight>
-                {localStorage.getItem('token') &&
+                {isLoggedIn &&
                 <NavRight>
                     <Link exact to="/user">Profile</Link>
                 </NavRight>}
