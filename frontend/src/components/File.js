@@ -36,7 +36,7 @@ function File({file, first_name, last_name}) {
         formData.append('description', fileState.description);
         formData.append('modify_date', fileState.modifyDate);
 
-        axios.put('http://localhost:5000/files', formData, {
+        axios.put('http://localhost:5000/api/files', formData, {
             headers: {
                 'authorization': localStorage.getItem('token')
             }
@@ -56,7 +56,7 @@ function File({file, first_name, last_name}) {
         const formData = new FormData();
         formData.append('file', file[0]);
 
-        axios.post(`http://localhost:5000/file`, formData, {
+        axios.post(`http://localhost:5000/api/file`, formData, {
             headers: {
                 'authorization': localStorage.getItem('token')
             }

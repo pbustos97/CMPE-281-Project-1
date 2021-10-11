@@ -27,7 +27,7 @@ function Register() {
         }
         setError('');
 
-        axios.post('http://localhost:5000/user/register', newUser).then(res => {
+        axios.post('http://localhost:5000/api/user/register', newUser).then(res => {
             console.log(res.data);
             if (res.data.status === 'false') {
                 alert('Error creating user');
