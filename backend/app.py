@@ -2,6 +2,7 @@ import mysql.connector
 import boto3
 import os
 import jwt
+from boto3.dynamodb.types import Binary
 from botocore.exceptions import ClientError
 from flask import Flask, request, json, jsonify, make_response, session
 from flask_jwt_extended import JWTManager
@@ -9,6 +10,7 @@ from flask_jwt_extended import create_access_token
 from flask_cors import CORS, cross_origin
 from dotenv import load_dotenv
 from functools import wraps
+import bcrypt
 from datetime import datetime, timedelta
 load_dotenv()
 
@@ -46,7 +48,7 @@ def userRegister():
     email = reqDict['email']
     fname = reqDict['first_name']
     lname = reqDict['last_name']
-    hashedPassword = reqDict['password']
+    hashedPassword = bcrypt.hashpw(reqDict['password'].encode('utf8'), bcrypt.gensalt())
     regDate = round(int(reqDict['date'])/1000)
     role = 'user'
     userTable = dynamoDbGetTable('users')
@@ -77,16 +79,16 @@ def userRegister():
 def userLogin():
     reqDict = request.get_json()
     email = reqDict['email']
-    hashedPassword = reqDict['password']
     response = None
 
     # If password hash is in database return new jwt
     userTable = dynamoDbGetTable('users')
     res = userTable.get_item(Key={'email': email})
     item = res['Item']
+    passwordMatch = bcrypt.checkpw(reqDict['password'].encode('utf8'), item['passwordHash'].value)
 
     token = None
-    if (email == item['email'] and hashedPassword == item['passwordHash']):
+    if (email == item['email'] and passwordMatch):
 
         token = create_access_token(identity={
             'email': email
