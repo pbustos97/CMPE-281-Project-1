@@ -21,8 +21,8 @@ function App() {
   return (
     <div className="App">
       <GlobalStyle />
+      <Router>
         <Header />
-        <Router>
           <Route exact path='/login' component={LoginPage}/>
           <Route exact path='/user' component={UserPage}/>
           <Route exact path='/files' component={AdminPage}/>

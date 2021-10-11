@@ -1,7 +1,7 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { Link, BrowserRouter as Router } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { getAdmin, checkToken } from './Auth';
 
 
@@ -75,19 +75,13 @@ function Header() {
                     Hello, world
                 </NavCenter>
                 <NavRight>
-                    <Router>
-                        <Link exact to="/login">Login</Link>
-                    </Router>
+                    <Link exact to="/login">Login</Link>
                 </NavRight>
                 {isLoggedIn &&
                 <NavRight>
-                    <Router>
-                        <Link exact to="/user">Profile</Link>
-                    </Router>
+                    <Link exact to="/user">Profile</Link>
                 </NavRight>}
-                <Router>
-                    {isAdmin && <Link exact to="/files">Admin</Link>}
-                </Router>
+                {isAdmin && <Link exact to="/files">Admin</Link>}
             </NavHeader>
         </Nav>
     )
