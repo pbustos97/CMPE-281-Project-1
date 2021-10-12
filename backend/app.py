@@ -30,7 +30,7 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
 app.config['JWT_COOKIE_SECURE'] = False
 
 # AWS Configurations
-awsSession = boto3.session.Session(profile_name='rootAdmin')
+awsSession = boto3.session.Session()
 app.config['BUCKET_NAME'] = os.environ.get('S3_BUCKET_NAME')
 app.config['CF_DOMAIN'] = os.environ.get('CLOUDFRONT_DOMAIN')
 

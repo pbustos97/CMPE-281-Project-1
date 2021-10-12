@@ -94,8 +94,3 @@ pipeline {
         }
     }
 }
-
-// equivalent to lines 1-3
-node {
-    // groovy script
-}

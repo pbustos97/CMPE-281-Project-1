@@ -24,7 +24,7 @@ function Login() {
         setError('');
 
         // Send data to login api backend
-        axios.post('http://localhost:5000/api/user/login', loginUser).then(res => {
+        axios.post('http://filesapi.patrickdbustos.link/api/user/login', loginUser).then(res => {
             console.log(res);
             console.log(res.headers);
             if (res.data.status === 'false') {
@@ -35,6 +35,7 @@ function Login() {
                 window.location.href = window.location.origin;
             }
         }).catch(err => {
+            console.log(err);
         })
     };
 

@@ -35,7 +35,7 @@ const checkToken = async (token) => {
         console.log('no token');
         return false;
     } else {
-        const validToken = await axios.get('http://localhost:5000/api/checkToken', {
+        const validToken = await axios.get('http://filesapi.patrickdbustos.link/api/checkToken', {
             headers: {
                 'Authorization': localStorage.getItem('token')
             }
@@ -57,7 +57,7 @@ const checkToken = async (token) => {
 
 const getEmail = () => {
     
-    const data = fetch('http://localhost:5000/api/email', {
+    const data = fetch('http://filesapi.patrickdbustos.link/api/email', {
         method: 'GET',
         headers: { 'authorization': localStorage.getItem('token') }
     }).then((res) => res.json()).then(data => {
@@ -69,7 +69,7 @@ const getEmail = () => {
 }
 
 const getAdmin = async () => {
-    const data = fetch('http://localhost:5000/api/email', {
+    const data = fetch('http://filesapi.patrickdbustos.link/api/email', {
         method: 'GET',
         headers: { 'authorization': localStorage.getItem('token') }
     }).then((res) => res.json()).then(data => {
