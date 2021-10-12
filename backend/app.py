@@ -2,30 +2,37 @@ import mysql.connector
 import boto3
 import os
 import jwt
+from boto3.dynamodb.types import Binary
 from botocore.exceptions import ClientError
 from flask import Flask, request, json, jsonify, make_response, session
 from flask_jwt_extended import JWTManager
 from flask_jwt_extended import create_access_token
 from flask_cors import CORS, cross_origin
+from dotenv import load_dotenv
 from functools import wraps
+import bcrypt
 from datetime import datetime, timedelta
+load_dotenv()
 
 app = Flask(__name__)
 JWTManager(app)
 CORS(app)
 
-db = mysql.connector.connect(host='localhost', user='root',passwd='password', database='cmpe281files')
+db = mysql.connector.connect(host=os.environ.get('MYSQL_HOST'), 
+    user=os.environ.get('MYSQL_USER'),
+    passwd=os.environ.get('MYSQL_PWD'), 
+    database=os.environ.get('MYSQL_DB'))
 
 cur = db.cursor()
 
 # JWT Configurations
-app.config['SECRET_KEY'] = 'changelater'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
 app.config['JWT_COOKIE_SECURE'] = False
 
 # AWS Configurations
-awsSession = boto3.session.Session(profile_name='rootAdmin')
-app.config['BUCKET_NAME'] = 'cmpe281-p1-files'
-app.config['CF_DOMAIN'] = 'domain'
+awsSession = boto3.session.Session()
+app.config['BUCKET_NAME'] = os.environ.get('S3_BUCKET_NAME')
+app.config['CF_DOMAIN'] = os.environ.get('CLOUDFRONT_DOMAIN')
 
 ## User endpoints
 
@@ -41,7 +48,7 @@ def userRegister():
     email = reqDict['email']
     fname = reqDict['first_name']
     lname = reqDict['last_name']
-    hashedPassword = reqDict['password']
+    hashedPassword = bcrypt.hashpw(reqDict['password'].encode('utf8'), bcrypt.gensalt())
     regDate = round(int(reqDict['date'])/1000)
     role = 'user'
     userTable = dynamoDbGetTable('users')
@@ -72,16 +79,16 @@ def userRegister():
 def userLogin():
     reqDict = request.get_json()
     email = reqDict['email']
-    hashedPassword = reqDict['password']
     response = None
 
     # If password hash is in database return new jwt
     userTable = dynamoDbGetTable('users')
     res = userTable.get_item(Key={'email': email})
     item = res['Item']
+    passwordMatch = bcrypt.checkpw(reqDict['password'].encode('utf8'), item['passwordHash'].value)
 
     token = None
-    if (email == item['email'] and hashedPassword == item['passwordHash']):
+    if (email == item['email'] and passwordMatch):
 
         token = create_access_token(identity={
             'email': email
@@ -318,7 +325,7 @@ def s3GetObject(object:str):
     return s3.Object(app.config['BUCKET_NAME'], object)
 
 def dynamoDbGetTable(table:str):
-    dynamoDb = awsSession.resource('dynamodb', region_name='us-west-2', endpoint_url='http://localhost:8000')
+    dynamoDb = awsSession.resource('dynamodb', region_name='us-west-2', endpoint_url=os.environ.get('DYNAMODB_ENDPOINT'))
     return dynamoDb.Table(table)
 
 # Checks if token is valid or expired

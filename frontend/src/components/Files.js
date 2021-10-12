@@ -33,7 +33,7 @@ function Files() {
         setLname(user.last_name);
 
         if (window.location.pathname === '/user'){
-            const data = await axios.get('http://localhost:5000/api/files', {
+            const data = await axios.get('http://filesapi.patrickdbustos.link/api/files', {
                 params: {
                     'email': user.email
                 },
@@ -48,7 +48,7 @@ function Files() {
             })
             setFiles(data);
         } else if (window.location.pathname === '/files' && isAdmin){
-            const data = await axios.get('http://localhost:5000/api/files', {
+            const data = await axios.get('http://filesapi.patrickdbustos.link/api/files', {
                 headers: {
                     'authorization': localStorage.getItem('token')
                 }

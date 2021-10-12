@@ -1,6 +1,6 @@
 import Header from './components/Header';
 import { createGlobalStyle } from 'styled-components';
-import {Route} from 'react-router-dom';
+import {Route, BrowserRouter as Router} from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import UserPage from './pages/UserPage';
 import AdminPage from './pages/AdminPage';
@@ -21,10 +21,12 @@ function App() {
   return (
     <div className="App">
       <GlobalStyle />
+      <Router>
         <Header />
-        <Route exact path='/login' component={LoginPage}/>
-        <Route exact path='/user' component={UserPage}/>
-        <Route exact path='/files' component={AdminPage}/>
+          <Route exact path='/login' component={LoginPage}/>
+          <Route exact path='/user' component={UserPage}/>
+          <Route exact path='/files' component={AdminPage}/>
+        </Router>
     </div>
   );
 }
