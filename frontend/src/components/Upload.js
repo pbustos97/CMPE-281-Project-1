@@ -52,7 +52,7 @@ function Upload() {
                 'authorization': localStorage.getItem('token')
             }
         }).then(res => {
-                window.location.reload();
+                alert('File Successfully uploaded!');
         }).catch((error) => {
             console.log(error);
         });

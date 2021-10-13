@@ -18,13 +18,6 @@ app = Flask(__name__)
 JWTManager(app)
 CORS(app)
 
-db = mysql.connector.connect(host=os.environ.get('MYSQL_HOST'), 
-    user=os.environ.get('MYSQL_USER'),
-    passwd=os.environ.get('MYSQL_PWD'), 
-    database=os.environ.get('MYSQL_DB'))
-
-cur = db.cursor()
-
 # JWT Configurations
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
 app.config['JWT_COOKIE_SECURE'] = False
@@ -131,6 +124,12 @@ def fileGetAll():
     files = []
     response = ''
 
+    db = mysql.connector.connect(host=os.environ.get('MYSQL_HOST'), 
+    user=os.environ.get('MYSQL_USER'),
+    passwd=os.environ.get('MYSQL_PWD'), 
+    database=os.environ.get('MYSQL_DB'))
+    cur = db.cursor()
+
     # return all files in the db
     # else return files with linked email
     if (item['role'] == 'admin' and request.args.get('email') == None): 
@@ -145,7 +144,9 @@ def fileGetAll():
         #print(files)
     else:
         print('wrong user')
+        db.close()
         return jsonify({'message': 'Invalid access', 'status': 'failed'})
+    db.close()
     return jsonify(files)
 
 # Upload files, file replacement is handled by AWS
@@ -164,13 +165,14 @@ def fileUpload():
     email = request.form['email']
     dates = (round(int(request.form['upload_date'])/1000), round(int(request.form['update_date'])/1000))
 
-
     filePath = email + '/' + fileName
     file.save(fileName)
 
-    # Try to check if object is in bucket
-    # If not in bucket, continue with function
-    # Else, update file instead
+    db = mysql.connector.connect(host=os.environ.get('MYSQL_HOST'), 
+    user=os.environ.get('MYSQL_USER'),
+    passwd=os.environ.get('MYSQL_PWD'), 
+    database=os.environ.get('MYSQL_DB'))
+    cur = db.cursor()
 
     # Get Object from S3 Bucket
     s3File = s3GetObject(filePath)
@@ -183,13 +185,13 @@ def fileUpload():
         url = '{}/{}'.format(app.config['CF_DOMAIN'], filePath)
         print(url)
 
-        if getFileInDB(filePath):
-            modifyDBEntry(filePath, email, fileDescription, dates)
+        if getFileInDB(filePath, cur):
+            modifyDBEntry(filePath, email, fileDescription, dates, cur)
         else:
-            insertFileToDB(filePath, fileName, email, fileDescription, dates, url)
+            insertFileToDB(filePath, fileName, email, fileDescription, dates, url, cur)
     except Exception as e:
         print(e)
-
+    db.close()
     return jsonify({'message': 'Successful upload', 'status': 'success'})
 
 @app.route('/api/files', methods=['PUT'])
@@ -206,15 +208,22 @@ def fileUpdate():
     email = token['sub']['email']
     file = email + '/' + request.form['file']
 
+    db = mysql.connector.connect(host=os.environ.get('MYSQL_HOST'), 
+    user=os.environ.get('MYSQL_USER'),
+    passwd=os.environ.get('MYSQL_PWD'), 
+    database=os.environ.get('MYSQL_DB'))
+    cur = db.cursor()
+
     s3File = s3GetObject(file)
     
     # Update file metadata in database
     try:
         s3File.load()
 
-        if getFileInDB(file):
+        if getFileInDB(file, cur):
             modifyDBEntry(file, email, description, dates)
         else:
+            db.close()
             return jsonify({'message': 'Unable to upload file', 'status': 'failed'})
     except Exception as e:
         print(e)
@@ -223,13 +232,15 @@ def fileUpdate():
             db.commit()
         except Exception as e:
             print(e)
+            db.close()
             return jsonify({'message': 'Error deleting metadata from database', 'status': 'failed'})
+        db.close()
         return jsonify({'message': 'File does not exist', 'status': 'failed'})
-        
+    db.close()
     return jsonify({'message': 'Successful update', 'status': 'success'})
 
 # RDS specific functions. filePath includes the fileName
-def getFileInDB(filePath: str):
+def getFileInDB(filePath: str, cur):
     print('Getting file {filePath}')
     cur.execute('SELECT * FROM files WHERE file_path = \'%s\'' % (filePath))
     files = cur.fetchall()
@@ -237,7 +248,7 @@ def getFileInDB(filePath: str):
         return False
     return True
 
-def modifyDBEntry(filePath, email, description, dates):
+def modifyDBEntry(filePath, email, description, dates, cur):
     print('Modifying file {filePath}')
     modifiedDate = datetime.fromtimestamp(dates[1]).strftime('%c')
     try:
@@ -248,7 +259,7 @@ def modifyDBEntry(filePath, email, description, dates):
     db.commit()
     return
 
-def insertFileToDB(filePath, fileName, email, description, dates, url):
+def insertFileToDB(filePath, fileName, email, description, dates, url, cur):
     print('Inserting file {filePath}')
     uploadDate = datetime.fromtimestamp(dates[0]).strftime('%c')
     modifiedDate = datetime.fromtimestamp(dates[1]).strftime('%c')
@@ -284,6 +295,12 @@ def fileDelete():
     if (item['role'] != 'admin' or item['email'] != token['sub']['email']):
         return jsonify({'message': 'Unauthorized delete', 'status': 'failed'})
     
+    db = mysql.connector.connect(host=os.environ.get('MYSQL_HOST'), 
+    user=os.environ.get('MYSQL_USER'),
+    passwd=os.environ.get('MYSQL_PWD'), 
+    database=os.environ.get('MYSQL_DB'))
+    cur = db.cursor()
+    
 
     #Should not produce an exception but it's there just in case
     try:
@@ -293,8 +310,10 @@ def fileDelete():
         cur.execute('DELETE FROM files WHERE file_path=\'%s\'' % (request.form['file']))
         db.commit()
     except Exception as e:
+        db.close()
         print(e)
 
+    db.close()
     return jsonify({'message': 'Successful delete', 'status': 'success'})
 
 ## Admin and API endpoints
