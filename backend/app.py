@@ -221,7 +221,7 @@ def fileUpdate():
         s3File.load()
 
         if getFileInDB(file, cur):
-            modifyDBEntry(file, email, description, dates)
+            modifyDBEntry(file, email, description, dates, cur)
         else:
             db.close()
             return jsonify({'message': 'Unable to upload file', 'status': 'failed'})
