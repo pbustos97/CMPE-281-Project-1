@@ -27,7 +27,7 @@ function Register() {
         }
         setError('');
 
-        axios.post('http://filesapi.patrickdbustos.link/api/user/register', newUser).then(res => {
+        axios.post(`${process.env.REACT_APP_API}/api/user/register`, newUser).then(res => {
             console.log(res.data);
             if (res.data.status === 'false') {
                 alert('Error creating user');

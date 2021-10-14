@@ -47,7 +47,7 @@ function Upload() {
         formData.append('update_date', uploadState.update_date);
         formData.append('access_token', localStorage.getItem('token'));
 
-        axios.post('http://filesapi.patrickdbustos.link/api/files', formData, {
+        axios.post(`${process.env.REACT_APP_API}/api/files`, formData, {
             headers: {
                 'authorization': localStorage.getItem('token')
             }
@@ -56,6 +56,7 @@ function Upload() {
         }).catch((error) => {
             console.log(error);
         });
+
     };
 
     const fileSelectedHandler = (e) => {

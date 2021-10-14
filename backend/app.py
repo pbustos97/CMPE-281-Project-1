@@ -4,12 +4,11 @@ import os
 import jwt
 from boto3.dynamodb.types import Binary
 from botocore.exceptions import ClientError
-from flask import Flask, request, json, jsonify, make_response, session
+from flask import Flask, request, json, jsonify, make_response
 from flask_jwt_extended import JWTManager
 from flask_jwt_extended import create_access_token
-from flask_cors import CORS, cross_origin
+from flask_cors import CORS
 from dotenv import load_dotenv
-from functools import wraps
 import bcrypt
 from datetime import datetime, timedelta
 load_dotenv()
@@ -92,12 +91,13 @@ def userLogin():
    
     return make_response(response)
 
+## Replaced by /api/email
 # Should return user data from DynamoDB
-@app.route('/api/user', methods=['GET'])
-def userGet():
-    id = request.form['email']
-    user = f'user object {id} from db'
-    return jsonify(user)
+# @app.route('/api/user', methods=['GET'])
+# def userGet():
+#     id = request.form['email']
+#     user = f'user object {id} from db'
+#     return jsonify(user)
 
 # Modify user profile data
 @app.route('/api/user/<id>', methods=['PUT'])
@@ -111,7 +111,7 @@ def userDelete(id):
 
 ## File endpoints
 
-# Returns list of files the user has access to. If admin, different function
+# Returns list of files the user has access to according to role
 @app.route('/api/files', methods=['GET'])
 def fileGetAll():
     if (tokenValid(request.headers['Authorization']) == False):
@@ -150,7 +150,7 @@ def fileGetAll():
     return jsonify(files)
 
 # Upload files, file replacement is handled by AWS
-# Updates need to change modified date only
+# Updates file as well, replaces old version with uploaded version
 @app.route('/api/files', methods=['POST'])
 def fileUpload():
     # Handle access token first
@@ -192,10 +192,12 @@ def fileUpload():
             insertFileToDB(filePath, fileName, email, fileDescription, dates, url, cur)
             db.commit()
     except Exception as e:
+        db.close()
         print(e)
     db.close()
     return jsonify({'message': 'Successful upload', 'status': 'success'})
 
+# Updates file metadata in RDS
 @app.route('/api/files', methods=['PUT'])
 def fileUpdate():
     token = request.headers['authorization']
@@ -259,7 +261,6 @@ def modifyDBEntry(filePath, email, description, dates, cur):
     except Exception as e:
         print(e)
         return
-    db.commit()
     return
 
 def insertFileToDB(filePath, fileName, email, description, dates, url, cur):
@@ -273,11 +274,12 @@ def insertFileToDB(filePath, fileName, email, description, dates, url, cur):
         return
     return
 
+## Replaced with cloudfront URL storage inside RDS
 # Figure out how to get URL from boto3
-@app.route('/api/file', methods=['GET'])
-def fileGet():
-    s3File = s3GetObject(id)
-    return 200, 'Successful file get'
+# @app.route('/api/file', methods=['GET'])
+# def fileGet():
+#     s3File = s3GetObject(id)
+#     return 200, 'Successful file get'
 
 # Will always return a successful delete because of how boto3 S3.Objects are coded
 @app.route('/api/file', methods=['POST'])
@@ -317,6 +319,7 @@ def fileDelete():
 
     db.close()
     return jsonify({'message': 'Successful delete', 'status': 'success'})
+
 
 ## Admin and API endpoints
 

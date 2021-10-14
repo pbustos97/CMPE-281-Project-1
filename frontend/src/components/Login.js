@@ -24,7 +24,7 @@ function Login() {
         setError('');
 
         // Send data to login api backend
-        axios.post('http://filesapi.patrickdbustos.link/api/user/login', loginUser).then(res => {
+        axios.post(`${process.env.REACT_APP_API}/api/user/login`, loginUser).then(res => {
             console.log(res);
             console.log(res.headers);
             if (res.data.status === 'false') {
