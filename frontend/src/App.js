@@ -18,7 +18,6 @@ const GlobalStyle = createGlobalStyle`
 `
 
 function App() {
-  console.log(process.env)
   return (
     <div className="App">
       <GlobalStyle />
