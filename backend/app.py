@@ -187,8 +187,10 @@ def fileUpload():
 
         if getFileInDB(filePath, cur):
             modifyDBEntry(filePath, email, fileDescription, dates, cur)
+            db.commit()
         else:
             insertFileToDB(filePath, fileName, email, fileDescription, dates, url, cur)
+            db.commit()
     except Exception as e:
         print(e)
     db.close()
@@ -222,6 +224,7 @@ def fileUpdate():
 
         if getFileInDB(file, cur):
             modifyDBEntry(file, email, description, dates, cur)
+            db.commit()
         else:
             db.close()
             return jsonify({'message': 'Unable to upload file', 'status': 'failed'})
@@ -268,7 +271,6 @@ def insertFileToDB(filePath, fileName, email, description, dates, url, cur):
     except Exception as e:
         print(e)
         return
-    db.commit()
     return
 
 # Figure out how to get URL from boto3
