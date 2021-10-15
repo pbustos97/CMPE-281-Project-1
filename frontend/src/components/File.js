@@ -12,7 +12,7 @@ function File({file}) {
 
     useEffect(() => {
         fetchData();
-    }, [])
+    })
 
     // Should only return username's first and last names
     const fetchData = async (e) => {
@@ -95,7 +95,6 @@ function File({file}) {
     return (
         <StyledFileEntry>
             <StyledFileGrid>
-                {console.log(file)}
                 <StyledFileGridColumn>
                     {file[1]}
                 </StyledFileGridColumn>
