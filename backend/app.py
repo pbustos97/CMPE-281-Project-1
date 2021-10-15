@@ -22,7 +22,7 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
 app.config['JWT_COOKIE_SECURE'] = False
 
 # AWS Configurations
-awsSession = boto3.session.Session()
+awsSession = boto3.session.Session(profile_name=os.environ.get('AWS_PROFILE'))
 app.config['BUCKET_NAME'] = os.environ.get('S3_BUCKET_NAME')
 app.config['CF_DOMAIN'] = os.environ.get('CLOUDFRONT_DOMAIN')
 
@@ -91,13 +91,25 @@ def userLogin():
    
     return make_response(response)
 
-## Replaced by /api/email
-# Should return user data from DynamoDB
-# @app.route('/api/user', methods=['GET'])
-# def userGet():
-#     id = request.form['email']
-#     user = f'user object {id} from db'
-#     return jsonify(user)
+# Should return user data from DynamoDB using query
+@app.route('/api/user', methods=['GET'])
+def userGet():
+    email = request.args.get('email')
+    print(email)
+    response = jsonify({'message': '/api/user getting data', 'status': 'pending'})
+    
+    dynamo = dynamoDbGetTable('users')
+    res = dynamo.get_item(Key={'email': email})
+    if ('Item' not in res):
+        return jsonify({'message': 'User not found', 'status': 'failed'})
+    item = res['Item']
+    if (email == item['email']):
+        first_name = item['first_name']
+        last_name = item['last_name']
+        response = jsonify({'message': 'User found', 'status': 'success', 'first_name': first_name, 'last_name': last_name})
+    else:
+        response = jsonify({'message': 'Unable to get user', 'status': 'failed'})
+    return response
 
 # Modify user profile data
 @app.route('/api/user/<id>', methods=['PUT'])
@@ -179,6 +191,7 @@ def fileUpload():
     
     # Upload to S3 and remove from local system
     try:
+        print(s3File.Bucket())
         s3File.put(Body=open(fileName, 'rb'), ACL='public-read')
         os.remove(fileName)
         s3 = boto3.client('s3')
@@ -194,6 +207,7 @@ def fileUpload():
     except Exception as e:
         db.close()
         print(e)
+        return jsonify({'message': 'Failed upload', 'status': 'failed'})
     db.close()
     return jsonify({'message': 'Successful upload', 'status': 'success'})
 
@@ -321,7 +335,7 @@ def fileDelete():
     return jsonify({'message': 'Successful delete', 'status': 'success'})
 
 
-## Admin and API endpoints
+## Admin and functional endpoints
 
 # Verifies and returns the user data from the JWT token
 @app.route('/api/email', methods=['GET'])

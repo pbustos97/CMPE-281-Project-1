@@ -8,8 +8,6 @@ import { StyledFileEntry, StyledFileGrid, StyledFileGridColumn } from './StyledC
 // Component for a list of files
 function Files() {
     const [files, setFiles] = useState([]);
-    const [fname, setFname] = useState('');
-    const [lname, setLname] = useState('');
 
     // If not used, fetchData() will keep on sending requests
     useEffect(() => {
@@ -28,9 +26,6 @@ function Files() {
             alert('Error getting user data');
             window.location.href = window.location.origin;
         }
-        //console.log(user);
-        setFname(user.first_name);
-        setLname(user.last_name);
 
         if (window.location.pathname === '/user'){
             const data = await axios.get(`${process.env.REACT_APP_API}/api/files`, {
@@ -71,7 +66,7 @@ function Files() {
             </StyledFileGrid>
             </StyledFileEntry>
             {files.length > 0 && files.map((file) => (
-                <File key={file[0]} file={file} first_name={fname} last_name={lname}/>
+                <File key={file[0]} file={file} />
             ))}
             {files.length === 0 && (
                 <StyledFileGrid>

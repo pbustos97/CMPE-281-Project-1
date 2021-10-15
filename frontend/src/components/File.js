@@ -1,12 +1,35 @@
 import axios from 'axios';
 import React from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { StyledButton, StyledButtonDelete, StyledFileEntry, StyledFileGrid, StyledFileGridColumn, StyledInput } from './StyledComponents';
 import { checkToken } from './Auth';
 
 // File component for Files.js list
 // Displays all options user can do with file
-function File({file, first_name, last_name}) {
+function File({file}) {
+    const [first_name, setFirst_name] = useState('');
+    const [last_name, setLast_name] = useState('');
+
+    useEffect(() => {
+        fetchData();
+    }, [])
+
+    // Should only return username's first and last names
+    const fetchData = async (e) => {
+        const data = await axios.get(`${process.env.REACT_APP_API}/api/user`, {
+            params: {
+                'email': file[2]
+            }
+        }).then(res => {
+            console.log(res.data);
+            return res.data;
+        }).catch(err => {
+            console.log(err);
+        })
+        setFirst_name(data.first_name);
+        setLast_name(data.last_name);
+    }
+
     const initialFileState = {
         description: '',
         modifyDate: '',
@@ -72,6 +95,7 @@ function File({file, first_name, last_name}) {
     return (
         <StyledFileEntry>
             <StyledFileGrid>
+                {console.log(file)}
                 <StyledFileGridColumn>
                     {file[1]}
                 </StyledFileGridColumn>
