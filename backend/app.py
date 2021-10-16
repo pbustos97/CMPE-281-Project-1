@@ -22,6 +22,7 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
 app.config['JWT_COOKIE_SECURE'] = False
 
 # AWS Configurations
+# Shouldn't need a profile name in production, IAM roles should deal with this
 awsSession = boto3.session.Session(profile_name=os.environ.get('AWS_PROFILE'))
 app.config['BUCKET_NAME'] = os.environ.get('S3_BUCKET_NAME')
 app.config['CF_DOMAIN'] = os.environ.get('CLOUDFRONT_DOMAIN')
@@ -41,7 +42,9 @@ def userRegister():
     fname = reqDict['first_name']
     lname = reqDict['last_name']
     hashedPassword = bcrypt.hashpw(reqDict['password'].encode('utf8'), bcrypt.gensalt())
+    # date is divided by 1000 in order to be compatible with python's datetime system
     regDate = round(int(reqDict['date'])/1000)
+    # New user's role is always default for security
     role = 'user'
     userTable = dynamoDbGetTable('users')
     
