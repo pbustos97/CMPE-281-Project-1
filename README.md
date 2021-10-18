@@ -86,6 +86,8 @@ Each user is allowed to upload files as long as it's less than 10 MB in size. Ad
 - Have to load main URL again in order to use the application after a page reload or redirect
   - Has to do with how npm builds a react app, builds a single page instead of multiple pages for each URL path
       - Webpack required to fix
+- Editing the file with a single character doesn't edit the file description
+  - Might have to do with JS state variable assignment being delayed
 
 ### Backend bugs
 - File deletion endpoint always returns a success because of how the boto3 AWS wrapper works for S3 file deletion
