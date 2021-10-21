@@ -320,9 +320,9 @@ def fileDelete():
     database=os.environ.get('MYSQL_DB'))
     cur = db.cursor()
 
-    cur.execute('SELECT FROM files WHERE WHERE file_path=\'%s\'' % (request.form['file']))
+    cur.execute('SELECT * FROM files WHERE file_path=\'%s\'' % (request.form['file']))
     file = cur.fetchone()
-    if ((item['role'] != 'admin' and (item['email'] != file[2])))):
+    if ((item['role'] != 'admin' and (item['email'] != file[2]))):
         db.close()
         return jsonify({'message': 'Unauthorized delete', 'status': 'failed'})
 
