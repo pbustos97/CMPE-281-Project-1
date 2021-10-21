@@ -313,15 +313,18 @@ def fileDelete():
     res = userTable.get_item(Key={'email': token['sub']['email']})
     item = res['Item']
     print(item)
-    if (item['role'] != 'admin' or item['email'] != token['sub']['email']):
-        return jsonify({'message': 'Unauthorized delete', 'status': 'failed'})
     
     db = mysql.connector.connect(host=os.environ.get('MYSQL_HOST'), 
     user=os.environ.get('MYSQL_USER'),
     passwd=os.environ.get('MYSQL_PWD'), 
     database=os.environ.get('MYSQL_DB'))
     cur = db.cursor()
-    
+
+    cur.execute('SELECT FROM files WHERE WHERE file_path=\'%s\'' % (request.form['file']))
+    file = cur.fetchone()
+    if ((item['role'] != 'admin' and (item['email'] != file[2])))):
+        db.close()
+        return jsonify({'message': 'Unauthorized delete', 'status': 'failed'})
 
     #Should not produce an exception but it's there just in case
     try:
